@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # 1. The Core Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: rushtix-postgres
+    environment:
+      POSTGRES_USER: rushtix_admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: rushtix_db
+    ports:
+      - "5433:5432"  # <-- CHANGED: Host 5433 maps to Container 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 2. The High-Speed Cache & Lock Manager
+  redis:
+    image: redis:7-alpine
+    container_name: rushtix-redis
+    ports:
+      - "6380:6379"  # <-- CHANGED: Host 6380 maps to Container 6379
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
