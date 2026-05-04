@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Seat{
+public class Seat {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

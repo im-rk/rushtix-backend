@@ -11,15 +11,17 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name="Users")
+@Table(name="users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
 @Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(name="email",nullable=false,unique=true)
@@ -29,7 +31,8 @@ public class User {
     private String fullName;
 
     @Column(name="password_hash",nullable=false)
-    private String passward_hash;
+    @ToString.Exclude
+    private String password_hash;
 
     @Enumerated(EnumType.STRING)
     @Column(name="role",nullable=false)
