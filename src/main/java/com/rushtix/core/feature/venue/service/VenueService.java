@@ -1,6 +1,7 @@
 package com.rushtix.core.feature.venue.service;
 
 
+import com.rushtix.core.domain.entities.User;
 import com.rushtix.core.domain.entities.Venue;
 import com.rushtix.core.domain.enums.VenueStatus;
 import com.rushtix.core.feature.venue.dto.OrganizerVenueResponse;
@@ -8,6 +9,7 @@ import com.rushtix.core.feature.venue.dto.SeatMapUpdateRequest;
 import com.rushtix.core.feature.venue.dto.VenueRequest;
 import com.rushtix.core.feature.venue.mapper.VenueMapper;
 import com.rushtix.core.feature.venue.repository.VenueRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +22,20 @@ import java.util.UUID;
 public class VenueService {
         private final VenueRepository venueRepository;
         private final VenueMapper venueMapper;
+        private final EntityManager entityManager;
 
-        public OrganizerVenueResponse createVenue(VenueRequest request) {
+        @Transactional
+        public OrganizerVenueResponse createVenue(VenueRequest request, UUID organizerId) {
                 Venue venue = venueMapper.toEntity(request);
-                venue.setStatus(VenueStatus.INACTIVE);
+
+                // Link the Organizer (Owner) using EntityManager.getReference to avoid extra DB query
+                User organizer = entityManager.getReference(User.class, organizerId);
+                venue.setOrganizer(organizer);
+
+                // Set defaults
+                venue.setStatus(VenueStatus.ACTIVE);
                 venue.setSeatMapConfig("{}");
+
                 Venue savedVenue = venueRepository.save(venue);
                 return venueMapper.toOrganizerVenueResponse(savedVenue);
         }

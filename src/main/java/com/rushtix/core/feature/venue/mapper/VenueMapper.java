@@ -12,6 +12,7 @@ import org.mapstruct.ReportingPolicy;
 public interface VenueMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "organizer", ignore = true) // Set by service to link owner
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "seatMapConfig",ignore = true)
     @Mapping(target = "createdAt", ignore = true)

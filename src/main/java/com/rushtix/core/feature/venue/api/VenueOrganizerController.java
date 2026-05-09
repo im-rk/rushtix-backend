@@ -24,7 +24,9 @@ public class VenueOrganizerController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public OrganizerVenueResponse createVenue(@RequestBody @Valid VenueRequest request) {
-        return venueService.createVenue(request);
+        // TODO: Replace with SecurityUtils.getCurrentUserId() after Auth setup
+        UUID organizerId = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        return venueService.createVenue(request, organizerId);
     }
 
     @GetMapping
