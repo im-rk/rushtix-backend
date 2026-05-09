@@ -9,6 +9,10 @@ import com.rushtix.core.feature.venue.mapper.VenueMapper;
 import com.rushtix.core.feature.venue.repository.VenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,9 +22,35 @@ public class VenueService {
 
         public OrganizerVenueResponse createVenue(VenueRequest request) {
                 Venue venue = venueMapper.toEntity(request);
-                venue.setStatus(VenueStatus.ACTIVE);
+                venue.setStatus(VenueStatus.INACTIVE);
                 venue.setSeatMapConfig("{}");
                 Venue savedVenue = venueRepository.save(venue);
                 return venueMapper.toOrganizerVenueResponse(savedVenue);
+        }
+
+        @Transactional(readOnly = true)
+        public List<OrganizerVenueResponse> getAllMyVenues(UUID organizerId)
+        {
+            return venueRepository.findAllByOrganizerId(organizerId).stream().map(venueMapper::toOrganizerVenueResponse).toList();
+        }
+
+        @Transactional(readOnly = true)
+        public OrganizerVenueResponse getVenueById(UUID Id,UUID organizerId)
+        {
+            Venue venue=venueRepository.findByIdAndOrganizerId(Id,organizerId)
+                    .orElseThrow(()->new RuntimeException("venue not found or access denied"));
+
+
+            return venueMapper.toOrganizerVenueResponse(venue);
+        }
+
+        @Transactional
+        public OrganizerVenueResponse updateVenue(UUID id,UUID organizerID,VenueRequest request)
+        {
+            Venue venue=venueRepository.findByIdAndOrganizerId(id,organizerID)
+                    .orElseThrow(()->new RuntimeException("Venue not found or unauthorized entry"));
+
+            venueMapper.updateEntityFromRequest(request,venue);
+            return venueMapper.toOrganizerVenueResponse(venueRepository.save(venue));
         }
 }
