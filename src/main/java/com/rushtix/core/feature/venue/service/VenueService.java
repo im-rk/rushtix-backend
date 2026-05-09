@@ -4,6 +4,7 @@ package com.rushtix.core.feature.venue.service;
 import com.rushtix.core.domain.entities.Venue;
 import com.rushtix.core.domain.enums.VenueStatus;
 import com.rushtix.core.feature.venue.dto.OrganizerVenueResponse;
+import com.rushtix.core.feature.venue.dto.SeatMapUpdateRequest;
 import com.rushtix.core.feature.venue.dto.VenueRequest;
 import com.rushtix.core.feature.venue.mapper.VenueMapper;
 import com.rushtix.core.feature.venue.repository.VenueRepository;
@@ -52,5 +53,24 @@ public class VenueService {
 
             venueMapper.updateEntityFromRequest(request,venue);
             return venueMapper.toOrganizerVenueResponse(venueRepository.save(venue));
+        }
+
+        @Transactional
+        public void updateSeatMap(UUID id, UUID organizerId, SeatMapUpdateRequest request)
+        {
+            Venue venue=venueRepository.findByIdAndOrganizerId(id,organizerId)
+                    .orElseThrow(()->new RuntimeException("Venue not found or unauthorized entry"));
+            venue.setSeatMapConfig(request.seatMapConfig());
+            venueRepository.save(venue);
+        }
+
+        @Transactional
+        public void deleteVenue(UUID id,UUID organizerId)
+        {
+            Venue venue=venueRepository.findByIdAndOrganizerId(id,organizerId)
+                    .orElseThrow(()->new RuntimeException("Venue not found or unauthorized entry"));
+
+            venueRepository.delete(venue);
+
         }
 }
