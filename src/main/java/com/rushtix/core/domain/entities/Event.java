@@ -10,7 +10,10 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "events")
+@Table(name = "events", indexes = {
+    @Index(name = "idx_event_status_date", columnList = "status, event_date"),
+    @Index(name = "idx_event_organizer", columnList = "organizer_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -66,18 +69,18 @@ public class Event {
     private EventStatus status;
 
     @Column(name = "total_seats", nullable = false)
-    private Integer totalSeats;
+    private int totalSeats;
 
     @Column(name = "seats_sold", nullable = false)
-    private Integer seatsSold;
+    private int seatsSold = 0;
 
     @Column(name = "seats_locked", nullable = false)
-    private Integer seatsLocked;
+    private int seatsLocked = 0;
 
     // Optimistic Locking for concurrent booking
     @Version
     @Column(nullable = false)
-    private Integer version;
+    private int version;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
