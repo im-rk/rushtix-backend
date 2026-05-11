@@ -11,7 +11,10 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "ticket_categories")
+@Table(name = "ticket_categories", indexes = {
+    @Index(name = "idx_ticket_category_event", columnList = "event_id"),
+    @Index(name = "idx_ticket_category_display_order", columnList = "event_id, display_order")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,7 +41,7 @@ public class TicketCategory {
     private String name;
 
     @Column(name = "display_order", nullable = false)
-    private Integer displayOrder;
+    private int displayOrder;
 
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
@@ -53,25 +56,25 @@ public class TicketCategory {
     private BigDecimal maxPrice;
 
     @Column(nullable = false)
-    private Integer capacity;
+    private int capacity;
 
     @Column(name = "seats_sold", nullable = false)
-    private Integer seatsSold;
+    private int seatsSold = 0;
 
     @Column(name = "seats_locked", nullable = false)
-    private Integer seatsLocked;
+    private int seatsLocked = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "pricing_algorithm", nullable = false, length = 50)
     private PricingAlgorithm pricingAlgorithm;
 
     @Column(name = "dynamic_pricing_enabled", nullable = false)
-    private Boolean dynamicPricingEnabled;
+    private boolean dynamicPricingEnabled = false;
 
     // Optimistic locking for when the AI and a user try to update the price at the same time
     @Version
     @Column(nullable = false)
-    private Integer version;
+    private int version;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

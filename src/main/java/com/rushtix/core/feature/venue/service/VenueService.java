@@ -11,6 +11,7 @@ import com.rushtix.core.feature.venue.mapper.VenueMapper;
 import com.rushtix.core.feature.venue.repository.VenueRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +24,15 @@ public class VenueService {
         private final VenueRepository venueRepository;
         private final VenueMapper venueMapper;
         private final EntityManager entityManager;
+        private final JpaRepository<User, UUID> userRepository;
 
         @Transactional
         public OrganizerVenueResponse createVenue(VenueRequest request, UUID organizerId) {
+                // Validate that organizer exists (prevent FK constraint error)
+                if (!userRepository.existsById(organizerId)) {
+                        throw new RuntimeException("Organizer not found");
+                }
+
                 Venue venue = venueMapper.toEntity(request);
 
                 // Link the Organizer (Owner) using EntityManager.getReference to avoid extra DB query
