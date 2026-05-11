@@ -8,8 +8,10 @@ import com.rushtix.core.feature.events.dto.EventDetailResponse;
 import com.rushtix.core.feature.events.dto.EventRequest;
 import com.rushtix.core.feature.events.mapper.EventMapper;
 import com.rushtix.core.feature.events.repository.EventRepository;
+import com.rushtix.core.feature.venue.repository.VenueRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +25,24 @@ public class EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
     private final EntityManager entityManager;
+    private final VenueRepository venueRepository;
+    private final JpaRepository<User, UUID> userRepository;
 
     @Transactional
     public EventDetailResponse createEvent(EventRequest request, UUID organizerId) {
         // Validate temporal logic
         validateEventDates(request);
         validateBookingWindow(request);
+
+        // Validate that organizer exists (prevent FK constraint error)
+        if (!userRepository.existsById(organizerId)) {
+            throw new RuntimeException("Organizer not found");
+        }
+
+        // Validate that venue exists (prevent FK constraint error)
+        if (!venueRepository.existsById(request.venueId())) {
+            throw new RuntimeException("Venue not found");
+        }
 
         // Convert DTO to entity (organizer, venue, status will be null at this point)
         Event event = eventMapper.toEntity(request);
@@ -99,6 +113,11 @@ public class EventService {
     public EventDetailResponse cancelEvent(UUID id, UUID organizerId, String reason) {
         Event event = eventRepository.findByIdAndOrganizerId(id, organizerId)
                 .orElseThrow(() -> new RuntimeException("Event not found or access denied"));
+
+        // Prevent cancelling an already cancelled event
+        if (event.getStatus() == EventStatus.CANCELLED) {
+            throw new RuntimeException("Event is already cancelled");
+        }
 
         event.setStatus(EventStatus.CANCELLED);
         event.setCancellationReason(reason);

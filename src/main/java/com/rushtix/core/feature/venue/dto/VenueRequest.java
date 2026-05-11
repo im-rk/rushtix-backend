@@ -1,5 +1,6 @@
 package com.rushtix.core.feature.venue.dto;
 
+ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -28,6 +29,7 @@ public record VenueRequest(
         String pincode, // Optional, but if provided, limit size
 
         @Min(value = 10, message = "Total capacity must be at least 10")
+        @Max(value = 1000000, message = "Total capacity cannot exceed 1,000,000")
         int totalCapacity,
 
         @NotBlank(message = "Timezone cannot be blank (e.g., Asia/Kolkata)")
