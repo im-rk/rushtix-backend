@@ -9,7 +9,10 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "seats")
+@Table(name = "seats", indexes = {
+        @Index(name = "idx_seat_event_status", columnList = "event_id, status"),
+        @Index(name = "idx_seat_booking", columnList = "booking_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -62,7 +65,7 @@ public class Seat {
     private String displayLabel;
 
     @Column(name = "is_accessible", nullable = false)
-    private Boolean isAccessible;
+    private boolean isAccessible=false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
