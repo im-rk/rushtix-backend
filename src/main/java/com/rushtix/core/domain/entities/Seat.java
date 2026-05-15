@@ -12,6 +12,9 @@ import java.util.UUID;
 @Table(name = "seats", indexes = {
         @Index(name = "idx_seat_event_status", columnList = "event_id, status"),
         @Index(name = "idx_seat_booking", columnList = "booking_id")
+},
+uniqueConstraints = {
+        @UniqueConstraint(name = "uk_seat_event_row_seat", columnNames = {"event_id", "row_label", "seat_number"})
 })
 @Getter
 @Setter

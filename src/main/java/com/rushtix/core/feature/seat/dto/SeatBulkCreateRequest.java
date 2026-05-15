@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 
 import java.util.UUID;
 
-public record SeatBulkRequest(
+public record SeatBulkCreateRequest(
         @NotNull(message = "Category ID is required")
         UUID categoryId,
 
