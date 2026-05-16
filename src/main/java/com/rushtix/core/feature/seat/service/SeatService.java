@@ -6,9 +6,11 @@ import com.rushtix.core.domain.entities.TicketCategory;
 import com.rushtix.core.domain.enums.SeatStatus;
 import com.rushtix.core.feature.events.repository.EventRepository;
 import com.rushtix.core.feature.seat.dto.SeatBulkCreateRequest;
+import com.rushtix.core.feature.seat.dto.SeatResponse;
+import com.rushtix.core.feature.seat.mapper.SeatMapper;
 import com.rushtix.core.feature.seat.repository.SeatRepository;
 import com.rushtix.core.feature.ticketcategory.repository.TicketCategoryRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,7 @@ public class SeatService {
     private final SeatRepository seatRepository;
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final SeatMapper seatMapper;
 
     @Transactional
     public void bulkCreateSeats(UUID eventId, SeatBulkCreateRequest request) {
@@ -58,5 +61,17 @@ public class SeatService {
 
         // 3. Batch Save for performance
         seatRepository.saveAll(seatsToSave);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatResponse> getSeatMapforEvent(UUID eventId) {
+        // 1. Validate Event Exists
+        if (!eventRepository.existsById(eventId)) {
+            throw new RuntimeException("Event not found");
+        }
+
+        // 2. Fetch Seats and Map to Response DTOs
+        List<Seat> seats = seatRepository.findAllByEventIdOrderByRowLabelAscSeatNumberAsc(eventId);
+        return seatMapper.toResponseList(seats);
     }
 }
