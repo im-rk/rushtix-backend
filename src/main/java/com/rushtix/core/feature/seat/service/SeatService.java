@@ -7,6 +7,7 @@ import com.rushtix.core.domain.enums.SeatStatus;
 import com.rushtix.core.feature.events.repository.EventRepository;
 import com.rushtix.core.feature.seat.dto.SeatBulkCreateRequest;
 import com.rushtix.core.feature.seat.dto.SeatResponse;
+import com.rushtix.core.feature.seat.dto.SeatUpdateRequest;
 import com.rushtix.core.feature.seat.mapper.SeatMapper;
 import com.rushtix.core.feature.seat.repository.SeatRepository;
 import com.rushtix.core.feature.ticketcategory.repository.TicketCategoryRepository;
@@ -73,5 +74,54 @@ public class SeatService {
         // 2. Fetch Seats and Map to Response DTOs
         List<Seat> seats = seatRepository.findAllByEventIdOrderByRowLabelAscSeatNumberAsc(eventId);
         return seatMapper.toResponseList(seats);
+    }
+
+    public SeatResponse updateSeat(UUID seatId, SeatUpdateRequest request) {
+        Seat seat = seatRepository.findById(seatId)
+                .orElseThrow(() -> new RuntimeException("Seat not found"));
+
+        if(seat.getStatus()==SeatStatus.BOOKED || seat.getStatus()==SeatStatus.LOCKED){
+            throw new RuntimeException("Cannot update a seat that is currently locked or sold");
+        }
+
+        boolean duplicateExists=seatRepository.existsByEventIdAndRowLabelAndSeatNumberAndIdNot(
+                seat.getEvent().getId(),
+                request.rowLabel(),
+                request.seatNumber(),
+                seatId
+        );
+        if(duplicateExists){
+            throw new RuntimeException("Another seat with the same row and number already exists in this event");
+        }
+
+
+        seat.setRowLabel(request.rowLabel());
+        seat.setSeatNumber(request.seatNumber());
+        seat.setDisplayLabel(request.rowLabel()+ "-" + request.seatNumber());
+        seat.setAccessible(request.isAccessible());
+        seat.setStatus(request.status());
+
+        Seat updatedSeat = seatRepository.save(seat);
+        return seatMapper.toResponse(updatedSeat);
+    }
+
+    @Transactional
+    public void clearSeatMap(UUID eventId) {
+        // 1. Validate Event Exists
+        if (!eventRepository.existsById(eventId)) {
+            throw new RuntimeException("Event not found");
+        }
+
+        // 2. Check for Active Commitments
+        boolean hasActiveCommitments = seatRepository.existsByEventIdAndStatusIn(
+                eventId,
+                List.of(SeatStatus.LOCKED, SeatStatus.BOOKED)
+        );
+        if (hasActiveCommitments) {
+            throw new RuntimeException("Cannot clear seat map with active locked or sold seats");
+        }
+
+        // 3. Perform Hard Delete
+        seatRepository.deleteAllByEventId(eventId);
     }
 }
