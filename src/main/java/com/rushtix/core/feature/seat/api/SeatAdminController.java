@@ -21,7 +21,8 @@ public class SeatAdminController {
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.CREATED)
     public void bulkCreateSeats(@PathVariable UUID eventId, @RequestBody @Valid SeatBulkCreateRequest request) {
-        seatService.bulkCreateSeats(eventId, request);}
+        seatService.bulkCreateSeats(eventId, request);
+    }
 
     @GetMapping
     public List<SeatResponse> getSeatMap(@PathVariable UUID eventId) {

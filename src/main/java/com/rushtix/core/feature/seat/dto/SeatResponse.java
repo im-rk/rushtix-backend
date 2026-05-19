@@ -8,7 +8,7 @@ import java.util.UUID;
 public record SeatResponse(
         UUID id,
         UUID eventId,
-        UUID cateqoryId,
+        UUID categoryId,
         String rowLabel,
         String seatNumber,
         String displayLabel,

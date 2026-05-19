@@ -11,6 +11,7 @@ import com.rushtix.core.feature.seat.dto.SeatUpdateRequest;
 import com.rushtix.core.feature.seat.mapper.SeatMapper;
 import com.rushtix.core.feature.seat.repository.SeatRepository;
 import com.rushtix.core.feature.ticketcategory.repository.TicketCategoryRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,12 +42,7 @@ public class SeatService {
         for (int i = 0; i < request.count(); i++) {
             String seatNum = String.valueOf(request.startNumber() + i);
 
-            // 1. Skip if seat already exists (Idempotency)
-            if (seatRepository.existsByEventIdAndRowLabelAndSeatNumber(eventId, request.rowLabel(), seatNum)) {
-                continue;
-            }
-
-            // 2. Build Seat Entity
+            // Build Seat Entity
             Seat seat = Seat.builder()
                     .event(event)
                     .category(category)
@@ -60,8 +56,12 @@ public class SeatService {
             seatsToSave.add(seat);
         }
 
-        // 3. Batch Save for performance
-        seatRepository.saveAll(seatsToSave);
+        // Batch Save with constraint violation handling
+        try {
+            seatRepository.saveAllAndFlush(seatsToSave);
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("Some seats already exist for this event and row: " + e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +76,7 @@ public class SeatService {
         return seatMapper.toResponseList(seats);
     }
 
+    @Transactional
     public SeatResponse updateSeat(UUID seatId, SeatUpdateRequest request) {
         Seat seat = seatRepository.findById(seatId)
                 .orElseThrow(() -> new RuntimeException("Seat not found"));

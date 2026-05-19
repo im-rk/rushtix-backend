@@ -11,7 +11,7 @@ import java.util.List;
 public interface SeatMapper {
 
     @Mapping(target = "eventId", source = "event.id")
-    @Mapping(target = "cateqoryId", source = "category.id")
+    @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "lockedById", source = "lockedBy.id")
     @Mapping(target = "bookedById", source = "bookedBy.id")
     @Mapping(target = "bookingId", source = "booking.id")
