@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -73,6 +74,18 @@ public class Seat {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SeatStatus status;
+
+    @Column(name = "price_paid", precision = 10, scale = 2)
+    private BigDecimal pricePaid;
+
+    @Column(name = "price_multiplier", precision = 5, scale = 2)
+    private BigDecimal priceMultiplier;
+
+    @Column(name = "qr_token", columnDefinition = "TEXT")
+    private String qrToken;
+
+    @Column(name = "attended_at")
+    private OffsetDateTime attendedAt;
 
     @Column(name = "locked_until")
     private OffsetDateTime lockedUntil;
