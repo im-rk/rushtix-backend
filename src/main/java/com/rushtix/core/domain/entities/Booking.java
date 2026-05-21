@@ -8,6 +8,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -33,19 +35,15 @@ public class Booking {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seat_id", nullable = false)
-    @ToString.Exclude
-    private Seat seat;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     @ToString.Exclude
     private Event event;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    // One booking contains multiple physical seats
+    @OneToMany(mappedBy = "booking", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    @Builder.Default
     @ToString.Exclude
-    private TicketCategory category;
+    private List<Seat> seats = new ArrayList<>();
 
     // --- COLUMNS ---
 
@@ -53,14 +51,9 @@ public class Booking {
     @Column(nullable = false, length = 30)
     private BookingStatus status;
 
-    @Column(name = "amount_paid", nullable = false, precision = 10, scale = 2)
-    private BigDecimal amountPaid;
-
-    @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal basePrice;
-
-    @Column(name = "price_multiplier", nullable = false, precision = 5, scale = 2)
-    private BigDecimal priceMultiplier;
+    // Reflects the collective price of all tickets in this booking order
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
 
     @Column(name = "idempotency_key", nullable = false, unique = true, length = 255)
     private String idempotencyKey;
@@ -68,17 +61,11 @@ public class Booking {
     @Column(name = "expires_at", nullable = false)
     private OffsetDateTime expiresAt;
 
-    @Column(name = "qr_token", columnDefinition = "TEXT")
-    private String qrToken;
-
     @Column(name = "confirmed_at")
     private OffsetDateTime confirmedAt;
 
     @Column(name = "cancelled_at")
     private OffsetDateTime cancelledAt;
-
-    @Column(name = "attended_at")
-    private OffsetDateTime attendedAt;
 
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
