@@ -9,6 +9,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 
+import java.util.List;
+
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses = {SeatMapper.class})
 public interface BookingMapper {
 
@@ -32,4 +34,6 @@ public interface BookingMapper {
     @Mapping(target = "paymentClientSecret", constant = "mock_secret_intent_token_99824")
     @Mapping(target = "gatewayType", constant = "MOCK_GATEWAY")
     BookingUserResponse  toUserResponse(Booking booking);
+
+    List<BookingUserResponse> toUserResponseList(List<Booking> bookings);
 }
