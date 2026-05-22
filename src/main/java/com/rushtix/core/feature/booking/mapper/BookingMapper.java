@@ -3,6 +3,7 @@ package com.rushtix.core.feature.booking.mapper;
 import com.rushtix.core.domain.entities.Booking;
 import com.rushtix.core.feature.booking.dto.BookingOrganizerDetailResponse;
 import com.rushtix.core.feature.booking.dto.BookingOrganizerSummaryResponse;
+import com.rushtix.core.feature.booking.dto.BookingUserResponse;
 import com.rushtix.core.feature.seat.mapper.SeatMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -23,4 +24,12 @@ public interface BookingMapper {
     @Mapping(target = "customerName", source = "user.name")
     @Mapping(target = "customerEmail", source = "user.email")
     BookingOrganizerDetailResponse toOrganizerDetail(Booking booking);
+
+
+    @Mapping(target = "bookingId", source = "id")
+    @Mapping(target = "eventId", source = "event.id")
+    @Mapping(target = "eventTitle", source = "event.title")
+    @Mapping(target = "paymentClientSecret", constant = "mock_secret_intent_token_99824")
+    @Mapping(target = "gatewayType", constant = "MOCK_GATEWAY")
+    BookingUserResponse  toUserResponse(Booking booking);
 }

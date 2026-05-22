@@ -13,7 +13,7 @@ import java.awt.print.Pageable;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1/organizer")
 @RequiredArgsConstructor
 public class BookingOrganizerController {
     private final BookingOrganizerService bookingAdminService;
