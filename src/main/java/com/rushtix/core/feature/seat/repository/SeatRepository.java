@@ -1,7 +1,11 @@
 package com.rushtix.core.feature.seat.repository;
 
 import com.rushtix.core.domain.entities.Seat;
+import io.lettuce.core.dynamic.annotation.Param;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,4 +24,8 @@ public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
     // The hard clear execution query
     void deleteAllByEventId(UUID eventId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Seat s WHERE s.id IN :seatIds")
+    List<Seat> findAndLockSeatsByIds(@Param("seatIds") List<UUID> seatIds);
 }
