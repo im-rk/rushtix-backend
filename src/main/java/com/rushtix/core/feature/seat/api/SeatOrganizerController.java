@@ -15,7 +15,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/events/{eventId}/seats")
 @RequiredArgsConstructor
-public class SeatAdminController {
+public class SeatOrganizerController {
     private final SeatService seatService;
 
     @PostMapping("/bulk")
