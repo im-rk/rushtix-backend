@@ -32,10 +32,10 @@ public class TicketCategoryService {
      * 4. Initial state: currentPrice = basePrice, seatsSold = 0, seatsLocked = 0
      */
     @Transactional
-    public TicketCategoryResponse createCategory(UUID eventId, TicketCategoryRequest request) {
-        // Validate event exists
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+    public TicketCategoryResponse createCategory(UUID eventId, UUID organizerId, TicketCategoryRequest request) {
+        // Validate event exists AND belongs to the logged-in organizer
+        Event event = eventRepository.findByIdAndOrganizerId(eventId, organizerId)
+                .orElseThrow(() -> new RuntimeException("Event not found or access denied"));
 
         // Validate event has valid capacity
         if (event.getTotalSeats() <= 0) {
@@ -123,12 +123,10 @@ public class TicketCategoryService {
      * - Price boundaries must be maintained
      */
     @Transactional
-    public TicketCategoryResponse updateCategory(UUID id, TicketCategoryRequest request) {
-        TicketCategory category = ticketCategoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket category not found"));
+    public TicketCategoryResponse updateCategory(UUID eventId, UUID organizerId, UUID id, TicketCategoryRequest request) {
+        TicketCategory category = findCategoryAndValidateOwnership(id, eventId, organizerId);
 
-        Event event = eventRepository.findById(category.getEvent().getId())
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+        Event event = category.getEvent();
 
         // Validate price boundaries
         validatePriceBoundaries(request);
@@ -189,9 +187,8 @@ public class TicketCategoryService {
      * Constraint: Only allow deletion if no seats have been sold
      */
     @Transactional
-    public void deleteCategory(UUID id) {
-        TicketCategory category = ticketCategoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket category not found"));
+    public void deleteCategory(UUID eventId, UUID organizerId, UUID id) {
+        TicketCategory category = findCategoryAndValidateOwnership(id, eventId, organizerId);
 
         if (category.getSeatsSold() > 0) {
             throw new RuntimeException(
@@ -208,9 +205,8 @@ public class TicketCategoryService {
      * Constraint: currentPrice must be within [minPrice, maxPrice]
      */
     @Transactional
-    public TicketCategoryResponse updateCurrentPrice(UUID id, java.math.BigDecimal newPrice) {
-        TicketCategory category = ticketCategoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket category not found"));
+    public TicketCategoryResponse updateCurrentPrice(UUID eventId, UUID organizerId, UUID id, java.math.BigDecimal newPrice) {
+        TicketCategory category = findCategoryAndValidateOwnership(id, eventId, organizerId);
 
         // Validate price within boundaries
         if (newPrice.compareTo(category.getMinPrice()) < 0) {
@@ -256,5 +252,24 @@ public class TicketCategoryService {
                     ") cannot be greater than maximum price (" + request.maxPrice() + ")"
             );
         }
+    }
+
+    // --- HELPER: Find category, validate it belongs to the event, and validate organizer owns the event ---
+
+    private TicketCategory findCategoryAndValidateOwnership(UUID categoryId, UUID eventId, UUID organizerId) {
+        TicketCategory category = ticketCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Ticket category not found"));
+
+        if (!category.getEvent().getId().equals(eventId)) {
+            throw new RuntimeException(
+                    "Category does not belong to event " + eventId
+            );
+        }
+
+        if (!category.getEvent().getOrganizer().getId().equals(organizerId)) {
+            throw new RuntimeException("Access denied: you do not own this event");
+        }
+
+        return category;
     }
 }

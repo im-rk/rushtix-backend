@@ -7,14 +7,16 @@ import com.rushtix.core.feature.seat.service.SeatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin/events/{eventId}/seats")
+@RequestMapping("/api/v1/organizer/events/{eventId}/seats")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ORGANIZER')")
 public class SeatOrganizerController {
     private final SeatService seatService;
 
