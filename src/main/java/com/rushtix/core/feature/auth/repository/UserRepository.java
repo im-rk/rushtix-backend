@@ -1,4 +1,4 @@
-package com.rushtix.core.feature.user;
+package com.rushtix.core.feature.auth.repository;
 
 import com.rushtix.core.domain.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;

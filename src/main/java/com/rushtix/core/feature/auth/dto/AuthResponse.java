@@ -1,0 +1,11 @@
+package com.rushtix.core.feature.auth.dto;
+
+import java.util.UUID;
+
+public record AuthResponse(
+        String token, // The secure stateless JWT string token
+        UUID userId,
+        String email,
+        String role
+) {
+}

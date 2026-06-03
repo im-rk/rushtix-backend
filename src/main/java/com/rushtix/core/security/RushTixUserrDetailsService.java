@@ -1,7 +1,7 @@
 package com.rushtix.core.security;
 
 import com.rushtix.core.domain.entities.User;
-import com.rushtix.core.feature.user.UserRepository;
+import com.rushtix.core.feature.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,7 +13,7 @@ import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
-public class RushTixUserrDetailsService implements UserDetailsService {
+public class RushTixUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
