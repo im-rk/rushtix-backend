@@ -53,15 +53,22 @@ public class AuthService {
     @Transactional
     public AuthResponse loginUser(LoginRequest request)
     {
-        var authentication=authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                        request.email(),
+                        request.email().toLowerCase().trim(),
                         request.password()
                 )
         );
 
         User user = userRepository.findByEmail(request.email().toLowerCase().trim())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new RuntimeException("User account is disabled");
+        }
+
+        user.setLastLoginAt(java.time.OffsetDateTime.now());
+        userRepository.save(user);
 
         String token = jwtTokenProvider.generateToken(
                 user.getId(),

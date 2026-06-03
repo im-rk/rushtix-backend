@@ -13,7 +13,7 @@ import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
-public class RushTixUserrDetailsService implements UserDetailsService {
+public class RushTixUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
