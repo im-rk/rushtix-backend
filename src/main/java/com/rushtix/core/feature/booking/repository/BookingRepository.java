@@ -16,9 +16,9 @@ import java.util.UUID;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     @Query("SELECT b FROM Booking b WHERE b.event.id = :eventId " +
-            "AND (:status IS NULL || b.status = :status) " +
-            "AND (:search IS NULL || LOWER(b.user.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "|| LOWER(b.user.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "AND (:status IS NULL OR b.status = :status) " +
+            "AND (:search IS NULL OR LOWER(b.user.fullName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(b.user.email) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Booking> findAdminDashboardBookings(
             @Param("eventId") UUID eventId,
             @Param("status") BookingStatus status,

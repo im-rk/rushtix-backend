@@ -10,7 +10,7 @@ public record BookingOrganizerSummaryResponse(
         UUID bookingId,
         String customerName,
         String customerEmail,
-        int totalSeats,
+        int ticketCount,
         BigDecimal totalPrice,
         BookingStatus status,
         OffsetDateTime createdAt
