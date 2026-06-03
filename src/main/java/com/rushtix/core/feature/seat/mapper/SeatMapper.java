@@ -4,10 +4,11 @@ import com.rushtix.core.domain.entities.Seat;
 import com.rushtix.core.feature.seat.dto.SeatResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface SeatMapper {
 
     @Mapping(target = "eventId", source = "event.id")

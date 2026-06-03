@@ -5,12 +5,10 @@ import com.rushtix.core.feature.events.dto.EventDetailResponse;
 import com.rushtix.core.feature.events.dto.EventRequest;
 import com.rushtix.core.feature.events.dto.EventSummaryResponse;
 import com.rushtix.core.feature.venue.mapper.VenueMapper;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE,
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING
+        ,unmappedTargetPolicy = ReportingPolicy.IGNORE,
         uses = {VenueMapper.class})
 public interface EventMapper {
 

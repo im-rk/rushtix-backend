@@ -3,12 +3,10 @@ package com.rushtix.core.feature.ticketcategory.mapper;
 import com.rushtix.core.domain.entities.TicketCategory;
 import com.rushtix.core.feature.ticketcategory.dto.TicketCategoryRequest;
 import com.rushtix.core.feature.ticketcategory.dto.TicketCategoryResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING
+        , unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TicketCategoryMapper {
 
     /**

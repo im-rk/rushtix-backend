@@ -15,7 +15,7 @@ import java.util.List;
 public interface BookingMapper {
 
     @Mapping(target = "bookingId", source = "id")
-    @Mapping(target = "customerName", source = "user.name")
+    @Mapping(target = "customerName", source = "user.fullName")
     @Mapping(target = "customerEmail", source = "user.email")
     @Mapping(target = "ticketCount", expression = "java(booking.getSeats() != null ? booking.getSeats().size() : 0)")
     BookingOrganizerSummaryResponse toOrganizerSummary(Booking booking);
@@ -23,7 +23,7 @@ public interface BookingMapper {
     @Mapping(target = "bookingId", source = "id")
     @Mapping(target = "eventId", source = "event.id")
     @Mapping(target = "eventTitle", source = "event.title")
-    @Mapping(target = "customerName", source = "user.name")
+    @Mapping(target = "customerName", source = "user.fullName")
     @Mapping(target = "customerEmail", source = "user.email")
     BookingOrganizerDetailResponse toOrganizerDetail(Booking booking);
 
