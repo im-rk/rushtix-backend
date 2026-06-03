@@ -3,11 +3,13 @@ package com.rushtix.core.feature.auth.service;
 import com.rushtix.core.domain.entities.User;
 import com.rushtix.core.domain.enums.UserStatus;
 import com.rushtix.core.feature.auth.dto.AuthResponse;
+import com.rushtix.core.feature.auth.dto.LoginRequest;
 import com.rushtix.core.feature.auth.dto.SignupRequest;
 import com.rushtix.core.feature.auth.repository.UserRepository;
 import com.rushtix.core.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional
     public AuthResponse registerUser(SignupRequest request) {
@@ -45,5 +48,27 @@ public class AuthService {
         );
 
         return new AuthResponse(token, savedUser.getId(), savedUser.getEmail(), savedUser.getRole().name());
+    }
+
+    @Transactional
+    public AuthResponse loginUser(LoginRequest request)
+    {
+        var authentication=authenticationManager.authenticate(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        request.email(),
+                        request.password()
+                )
+        );
+
+        User user = userRepository.findByEmail(request.email().toLowerCase().trim())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+
+        return new AuthResponse(token, user.getId(), user.getEmail(), user.getRole().name());
     }
 }

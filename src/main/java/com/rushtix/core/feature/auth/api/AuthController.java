@@ -1,6 +1,7 @@
 package com.rushtix.core.feature.auth.api;
 
 import com.rushtix.core.feature.auth.dto.AuthResponse;
+import com.rushtix.core.feature.auth.dto.LoginRequest;
 import com.rushtix.core.feature.auth.dto.SignupRequest;
 import com.rushtix.core.feature.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -23,5 +24,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         AuthResponse response = authService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.loginUser(request));
     }
 }
