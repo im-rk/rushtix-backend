@@ -4,6 +4,7 @@ import com.rushtix.core.feature.seat.dto.SeatBulkCreateRequest;
 import com.rushtix.core.feature.seat.dto.SeatResponse;
 import com.rushtix.core.feature.seat.dto.SeatUpdateRequest;
 import com.rushtix.core.feature.seat.service.SeatService;
+import com.rushtix.core.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,24 +24,29 @@ public class SeatOrganizerController {
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.CREATED)
     public void bulkCreateSeats(@PathVariable UUID eventId, @RequestBody @Valid SeatBulkCreateRequest request) {
-        seatService.bulkCreateSeats(eventId, request);
+        UUID organizerId = SecurityUtils.getCurrentUserId();
+        seatService.bulkCreateSeats(eventId, organizerId, request);
     }
 
     @GetMapping
     public List<SeatResponse> getSeatMap(@PathVariable UUID eventId) {
-        return seatService.getSeatMapforEvent(eventId);
+        UUID organizerId = SecurityUtils.getCurrentUserId();
+        return seatService.getSeatMapforEvent(eventId, organizerId);
     }
 
     @PutMapping("/{seatId}")
     public SeatResponse updateSeat(
+            @PathVariable UUID eventId,
             @PathVariable UUID seatId,
             @Valid @RequestBody SeatUpdateRequest request) {
-        return seatService.updateSeat(seatId, request);
+        UUID organizerId = SecurityUtils.getCurrentUserId();
+        return seatService.updateSeat(eventId, organizerId, seatId, request);
     }
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void clearSeatMap(@PathVariable UUID eventId) {
-        seatService.clearSeatMap(eventId);
+        UUID organizerId = SecurityUtils.getCurrentUserId();
+        seatService.clearSeatMap(eventId, organizerId);
     }
 }

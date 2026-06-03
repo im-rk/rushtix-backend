@@ -30,12 +30,16 @@ public class SeatService {
     private final SeatMapper seatMapper;
 
     @Transactional
-    public void bulkCreateSeats(UUID eventId, SeatBulkCreateRequest request) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+    public void bulkCreateSeats(UUID eventId, UUID organizerId, SeatBulkCreateRequest request) {
+        Event event = eventRepository.findByIdAndOrganizerId(eventId, organizerId)
+                .orElseThrow(() -> new RuntimeException("Event not found or access denied"));
 
         TicketCategory category = ticketCategoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (!category.getEvent().getId().equals(eventId)) {
+            throw new RuntimeException("Category does not belong to event " + eventId);
+        }
 
         List<Seat> seatsToSave = new ArrayList<>();
 
@@ -65,11 +69,10 @@ public class SeatService {
     }
 
     @Transactional(readOnly = true)
-    public List<SeatResponse> getSeatMapforEvent(UUID eventId) {
-        // 1. Validate Event Exists
-        if (!eventRepository.existsById(eventId)) {
-            throw new RuntimeException("Event not found");
-        }
+    public List<SeatResponse> getSeatMapforEvent(UUID eventId, UUID organizerId) {
+        // 1. Validate Event Exists and belongs to organizer
+        eventRepository.findByIdAndOrganizerId(eventId, organizerId)
+                .orElseThrow(() -> new RuntimeException("Event not found or access denied"));
 
         // 2. Fetch Seats and Map to Response DTOs
         List<Seat> seats = seatRepository.findAllByEventIdOrderByRowLabelAscSeatNumberAsc(eventId);
@@ -77,9 +80,17 @@ public class SeatService {
     }
 
     @Transactional
-    public SeatResponse updateSeat(UUID seatId, SeatUpdateRequest request) {
+    public SeatResponse updateSeat(UUID eventId, UUID organizerId, UUID seatId, SeatUpdateRequest request) {
         Seat seat = seatRepository.findById(seatId)
                 .orElseThrow(() -> new RuntimeException("Seat not found"));
+
+        if (!seat.getEvent().getId().equals(eventId)) {
+            throw new RuntimeException("Seat does not belong to event " + eventId);
+        }
+
+        if (!seat.getEvent().getOrganizer().getId().equals(organizerId)) {
+            throw new RuntimeException("Access denied: you do not own this event");
+        }
 
         if(seat.getStatus()==SeatStatus.BOOKED || seat.getStatus()==SeatStatus.LOCKED){
             throw new RuntimeException("Cannot update a seat that is currently locked or sold");
@@ -107,11 +118,10 @@ public class SeatService {
     }
 
     @Transactional
-    public void clearSeatMap(UUID eventId) {
-        // 1. Validate Event Exists
-        if (!eventRepository.existsById(eventId)) {
-            throw new RuntimeException("Event not found");
-        }
+    public void clearSeatMap(UUID eventId, UUID organizerId) {
+        // 1. Validate Event Exists and belongs to organizer
+        eventRepository.findByIdAndOrganizerId(eventId, organizerId)
+                .orElseThrow(() -> new RuntimeException("Event not found or access denied"));
 
         // 2. Check for Active Commitments
         boolean hasActiveCommitments = seatRepository.existsByEventIdAndStatusIn(
