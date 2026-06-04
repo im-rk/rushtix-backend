@@ -16,6 +16,7 @@ public interface SeatMapper {
     @Mapping(target = "lockedById", source = "lockedBy.id")
     @Mapping(target = "bookedById", source = "bookedBy.id")
     @Mapping(target = "bookingId", source = "booking.id")
+    @Mapping(target = "isAccessible", source = "accessible")
     SeatResponse toResponse(Seat seat);
 
     List<SeatResponse> toResponseList(List<Seat> seats);
