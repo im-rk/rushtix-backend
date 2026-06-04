@@ -1,5 +1,6 @@
 package com.rushtix.core.feature.seat.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rushtix.core.domain.enums.SeatStatus;
 
 import java.time.OffsetDateTime;
@@ -12,6 +13,7 @@ public record SeatResponse(
         String rowLabel,
         String seatNumber,
         String displayLabel,
+        @JsonProperty("isAccessible")
         boolean isAccessible,
         SeatStatus status,
         UUID lockedById,

@@ -1,5 +1,6 @@
 package com.rushtix.core.feature.seat.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
 import java.util.UUID;

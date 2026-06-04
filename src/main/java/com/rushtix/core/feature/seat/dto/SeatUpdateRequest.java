@@ -1,5 +1,6 @@
 package com.rushtix.core.feature.seat.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rushtix.core.domain.enums.SeatStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,5 +18,6 @@ public record SeatUpdateRequest(
         @NotNull(message = "Accessibility status is required")
         SeatStatus status,
 
+        @JsonProperty("isAccessible")
         boolean isAccessible
 ) {}
