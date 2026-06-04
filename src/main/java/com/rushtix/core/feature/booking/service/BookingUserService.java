@@ -26,67 +26,85 @@ public class BookingUserService {
     private final SeatRepository seatRepository;
     private final BookingMapper bookingMapper;
     private final EventRepository eventRepository;
+    private final RedisLockService redisLockService;
 
     @Transactional
     public BookingUserResponse createBookingReservation(BookingRequst request, User userContext) {
-        Event event = eventRepository.findById(request.eventId())
-                .orElseThrow(() -> new RuntimeException("Event layout verification failed"));
 
-        // 1. Acquire Database Lock on seats to isolate threads
-        List<Seat> seats = seatRepository.findAndLockSeatsByIds(request.seatIds());
-
-        if (seats.size() != request.seatIds().size()) {
-            throw new RuntimeException("Selected seats count mismatch or inventory mismatch");
+        boolean locksAcquired=redisLockService.acquireSeatLocks(request.seatIds(),userContext.getId(),10);
+        if(!locksAcquired) {
+            throw new RuntimeException("Unable to acquire locks on selected seats. Please try again.");
         }
 
-        BigDecimal calculatedTotal = BigDecimal.ZERO;
-        OffsetDateTime windowExpiration = OffsetDateTime.now().plusMinutes(10);
+        try
+        {
+            Event event = eventRepository.findById(request.eventId())
+                    .orElseThrow(() -> new RuntimeException("Event layout verification failed"));
 
-        // 2. Evaluate booking state safety boundary conditions
-        for (Seat seat : seats) {
-            boolean isLockStale = seat.getStatus() == SeatStatus.LOCKED &&
-                    seat.getLockedUntil() != null &&
-                    seat.getLockedUntil().isBefore(OffsetDateTime.now());
+            // 1. Acquire Database Lock on seats to isolate threads
+            List<Seat> seats = seatRepository.findAndLockSeatsByIds(request.seatIds());
 
-            if (seat.getStatus() != SeatStatus.AVAILABLE && !isLockStale) {
-                throw new RuntimeException("Seat " + seat.getDisplayLabel() + " is already occupied or pending purchase");
+            if (seats.size() != request.seatIds().size()) {
+                throw new RuntimeException("Selected seats count mismatch or inventory mismatch");
             }
 
-            TicketCategory category = seat.getCategory();
+            BigDecimal calculatedTotal = BigDecimal.ZERO;
+            OffsetDateTime windowExpiration = OffsetDateTime.now().plusMinutes(10);
 
-            // Snapshot dynamic pricing parameters directly onto the seat item row
-            seat.setPricePaid(category.getCurrentPrice());
-            seat.setPriceMultiplier(BigDecimal.ONE); // For base snapshot
-            seat.setStatus(SeatStatus.LOCKED);
-            seat.setLockedUntil(windowExpiration);
-            seat.setLockedBy(userContext);
+            // 2. Evaluate booking state safety boundary conditions
+            for (Seat seat : seats) {
+                boolean isLockStale = seat.getStatus() == SeatStatus.LOCKED &&
+                        seat.getLockedUntil() != null &&
+                        seat.getLockedUntil().isBefore(OffsetDateTime.now());
 
-            calculatedTotal = calculatedTotal.add(category.getCurrentPrice());
+                if (seat.getStatus() != SeatStatus.AVAILABLE && !isLockStale) {
+                    throw new RuntimeException("Seat " + seat.getDisplayLabel() + " is already occupied or pending purchase");
+                }
+
+                TicketCategory category = seat.getCategory();
+
+                // Snapshot dynamic pricing parameters directly onto the seat item row
+                seat.setPricePaid(category.getCurrentPrice());
+                seat.setPriceMultiplier(BigDecimal.ONE); // For base snapshot
+                seat.setStatus(SeatStatus.LOCKED);
+                seat.setLockedUntil(windowExpiration);
+                seat.setLockedBy(userContext);
+
+                calculatedTotal = calculatedTotal.add(category.getCurrentPrice());
+            }
+
+            // 3. Persist transaction container
+            Booking booking = Booking.builder()
+                    .user(userContext)
+                    .event(event)
+                    .status(BookingStatus.PENDING)
+                    .totalAmount(calculatedTotal)
+                    .idempotencyKey(request.idempotencyKey())
+                    .expiresAt(windowExpiration)
+                    .build();
+
+            // Crosslink entities
+            for (Seat seat : seats) {
+                seat.setBooking(booking);
+                booking.getSeats().add(seat);
+            }
+
+            return bookingMapper.toUserResponse(bookingRepository.save(booking));
+        }
+        catch(Exception e)
+        {
+            redisLockService.releaseSeatLocks(request.seatIds(),userContext.getId());
+            throw e;
         }
 
-        // 3. Persist transaction container
-        Booking booking = Booking.builder()
-                .user(userContext)
-                .event(event)
-                .status(BookingStatus.PENDING)
-                .totalAmount(calculatedTotal)
-                .idempotencyKey(request.idempotencyKey())
-                .expiresAt(windowExpiration)
-                .build();
-
-        // Crosslink entities
-        for (Seat seat : seats) {
-            seat.setBooking(booking);
-            booking.getSeats().add(seat);
-        }
-
-        return bookingMapper.toUserResponse(bookingRepository.save(booking));
     }
 
     @Transactional
     public BookingUserResponse confirmBookingPayment(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking reference not found"));
+
+        List<UUID> seatIds = booking.getSeats().stream().map(Seat::getId).toList();
 
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new RuntimeException("Transaction cannot be processed from state: " + booking.getStatus());
@@ -104,21 +122,28 @@ public class BookingUserService {
                 seat.setLockedUntil(null);
             }
             bookingRepository.save(booking);
+
+            // Release the high-speed Redis lock since time ran out
+            redisLockService.releaseSeatLocks(seatIds,booking.getUser().getId());
             throw new RuntimeException("The 10-minute checkout period expired. Your seats have been released.");
         }
 
-        // 4. Finalize tickets securely
+        // Finalize tickets securely
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setConfirmedAt(OffsetDateTime.now());
 
         for (Seat seat : booking.getSeats()) {
             seat.setStatus(SeatStatus.BOOKED);
             seat.setBookedBy(booking.getUser());
-            // Generates secure validation hash per physical ticket
             seat.setQrToken("RUSH-TIX-" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
         }
 
-        return bookingMapper.toUserResponse(bookingRepository.save(booking));
+        Booking savedBooking = bookingRepository.save(booking);
+
+        // SUCCESSFUL PURCHASE: Wipe the temporary lock key from Redis cleanly
+        redisLockService.releaseSeatLocks(seatIds,booking.getUser().getId());
+
+        return bookingMapper.toUserResponse(savedBooking);
     }
 
     @Transactional(readOnly = true)
