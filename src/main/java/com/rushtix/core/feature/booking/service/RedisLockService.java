@@ -32,12 +32,20 @@ public class RedisLockService {
 
     public void releaseSeatLocks(List<UUID> seatIds,UUID userId)
     {
+        String userIdStr = userId.toString();
+        List<String> keysToDelete = new java.util.ArrayList<>();
+
         for (UUID seatId : seatIds) {
             String lockKey = LOCK_KEY_PREFIX + seatId;
             String currentValue = redisTemplate.opsForValue().get(lockKey);
-            if (userId.toString().equals(currentValue)) {
-                redisTemplate.delete(lockKey);
+
+            if (userIdStr.equals(currentValue)) {
+                keysToDelete.add(lockKey);
             }
+        }
+
+        if (!keysToDelete.isEmpty()) {
+            redisTemplate.delete(keysToDelete);
         }
     }
 }

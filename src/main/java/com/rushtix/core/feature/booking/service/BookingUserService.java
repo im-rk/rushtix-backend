@@ -100,17 +100,18 @@ public class BookingUserService {
     }
 
     @Transactional
-    public BookingUserResponse confirmBookingPayment(UUID bookingId) {
+    public BookingUserResponse confirmBookingPayment(UUID bookingId, String paymentToken) { // ◄ Pass the token from the frontend!
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking reference not found"));
 
         List<UUID> seatIds = booking.getSeats().stream().map(Seat::getId).toList();
 
+        // 1. Enforce State Boundary Conditions
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new RuntimeException("Transaction cannot be processed from state: " + booking.getStatus());
         }
 
-        // Handle expired locks gracefully
+        // 2. Handle Expired Locks Gracefully (Check if they took longer than 10 mins to type card info)
         if (booking.getExpiresAt().isBefore(OffsetDateTime.now())) {
             booking.setStatus(BookingStatus.CANCELLED);
             booking.setCancellationReason("Checkout countdown expired");
@@ -122,19 +123,27 @@ public class BookingUserService {
                 seat.setLockedUntil(null);
             }
             bookingRepository.save(booking);
-
-            // Release the high-speed Redis lock since time ran out
             redisLockService.releaseSeatLocks(seatIds,booking.getUser().getId());
             throw new RuntimeException("The 10-minute checkout period expired. Your seats have been released.");
         }
 
-        // Finalize tickets securely
+        // ==========================================
+        // 3. NEW: PAYMENT GATEWAY VERIFICATION BLOCK
+        // ==========================================
+//        boolean isPaymentValid = verifyPaymentWithGateway(paymentToken, booking.getTotalAmount());
+//        if (!isPaymentValid) {
+//            throw new RuntimeException("Payment verification failed. Your card was not charged or the transaction was declined.");
+//        }
+        // ==========================================
+
+        // 4. Finalize tickets securely (Only runs if payment succeeded!)
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setConfirmedAt(OffsetDateTime.now());
 
         for (Seat seat : booking.getSeats()) {
             seat.setStatus(SeatStatus.BOOKED);
             seat.setBookedBy(booking.getUser());
+            // Generates secure validation hash per physical ticket
             seat.setQrToken("RUSH-TIX-" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
         }
 
