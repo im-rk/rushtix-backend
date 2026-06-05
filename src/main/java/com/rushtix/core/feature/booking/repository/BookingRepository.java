@@ -28,4 +28,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     List<Booking> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
+    List<Booking> findAllByStatusAndExpiresAtBefore(BookingStatus status, java.time.OffsetDateTime now);
+
 }
