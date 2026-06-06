@@ -2,13 +2,16 @@ package com.rushtix.core.feature.booking.service;
 
 import com.rushtix.core.domain.entities.*;
 import com.rushtix.core.domain.enums.BookingStatus;
+import com.rushtix.core.domain.enums.PaymentStatus;
 import com.rushtix.core.domain.enums.SeatStatus;
 import com.rushtix.core.feature.booking.dto.BookingRequst;
 import com.rushtix.core.feature.booking.dto.BookingUserResponse;
 import com.rushtix.core.feature.booking.mapper.BookingMapper;
 import com.rushtix.core.feature.booking.repository.BookingRepository;
+import com.rushtix.core.feature.booking.repository.PaymentRepository;
 import com.rushtix.core.feature.events.repository.EventRepository;
 import com.rushtix.core.feature.seat.repository.SeatRepository;
+import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +30,8 @@ public class BookingUserService {
     private final BookingMapper bookingMapper;
     private final EventRepository eventRepository;
     private final RedisLockService redisLockService;
+    private final PaymentGatewayService paymentGatewayService;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public BookingUserResponse createBookingReservation(BookingRequst request, User userContext) {
@@ -88,8 +93,22 @@ public class BookingUserService {
                 seat.setBooking(booking);
                 booking.getSeats().add(seat);
             }
+            Booking savedBooking = bookingRepository.save(booking);
 
-            return bookingMapper.toUserResponse(bookingRepository.save(booking));
+            PaymentIntent intent=paymentGatewayService.createPaymentIntent(savedBooking.getId(),calculatedTotal);
+            Payment paymentLedger=Payment.builder()
+                    .booking(savedBooking)
+                    .provider("STRIPE")
+                    .providerPaymentId(intent.getId())
+                    .amount(calculatedTotal)
+                    .currency("INR")
+                    .status(PaymentStatus.PENDING)
+                    .idempotencyKey(request.idempotencyKey())
+                    .providerMetadata("{}")
+                    .build();
+            paymentRepository.save(paymentLedger);
+
+            return bookingMapper.toUserResponse(savedBooking,intent);
         }
         catch(Exception e)
         {
