@@ -5,6 +5,7 @@ import com.rushtix.core.domain.enums.BookingStatus;
 import com.rushtix.core.domain.enums.PaymentStatus;
 import com.rushtix.core.domain.enums.SeatStatus;
 import com.rushtix.core.feature.booking.dto.BookingRequst;
+import com.rushtix.core.feature.booking.dto.BookingStatusResponse;
 import com.rushtix.core.feature.booking.dto.BookingUserResponse;
 import com.rushtix.core.feature.booking.mapper.BookingMapper;
 import com.rushtix.core.feature.booking.repository.BookingRepository;
@@ -158,7 +159,13 @@ public class BookingUserService {
     }
 
     @Transactional(readOnly = true)
-    public List<BookingUserResponse> getUserPurchaseHistory(UUID userId) {
-        return bookingMapper.toUserResponseList(bookingRepository.findAllByUserIdOrderByCreatedAtDesc(userId));
+    public BookingStatusResponse getFulfillmentStatus(UUID bookingId,UUID authenticatedUserId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking transaction not found"));
+
+        if (!booking.getUser().getId().equals(authenticatedUserId)) {
+            throw new RuntimeException("Unauthorized access to booking status");
+        }
+        return bookingMapper.toStatusResponse(booking);
     }
 }

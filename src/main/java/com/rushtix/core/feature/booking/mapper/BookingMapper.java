@@ -1,15 +1,17 @@
 package com.rushtix.core.feature.booking.mapper;
 
 import com.rushtix.core.domain.entities.Booking;
-import com.rushtix.core.feature.booking.dto.BookingOrganizerDetailResponse;
-import com.rushtix.core.feature.booking.dto.BookingOrganizerSummaryResponse;
-import com.rushtix.core.feature.booking.dto.BookingUserResponse;
+import com.rushtix.core.domain.entities.Seat;
+import com.rushtix.core.domain.enums.BookingStatus;
+import com.rushtix.core.feature.booking.dto.*;
 import com.rushtix.core.feature.seat.mapper.SeatMapper;
 import com.stripe.model.PaymentIntent;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+import org.mapstruct.Named;
 
+import java.util.Collections;
 import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses = {SeatMapper.class})
@@ -44,4 +46,27 @@ public interface BookingMapper {
     BookingUserResponse toUserResponse(Booking booking);
 
     List<BookingUserResponse> toUserResponseList(List<Booking> bookings);
+
+
+    @Mapping(source = "event.title",target = "eventTitle")
+    @Mapping(source = "event.startDateTime",target = "eventStartDateTime")
+    @Mapping(source = "event.venue.name",target = "venueName")
+    @Mapping(source = "event.venue.city",target = "venueCity")
+    @Mapping(source = "booking",target = "tickets", qualifiedByName = "seatsToTicketPasses")
+    BookingStatusResponse toStatusResponse(Booking booking);
+
+    @Named("seatsToTicketPasses")
+    default List<TicketPassResponse> seatsToTicketPasses(Booking booking) {
+        if (booking.getStatus() != BookingStatus.CONFIRMED || booking.getSeats()==null) {
+            return Collections.emptyList();
+        }
+        return booking.getSeats().stream()
+                .map(this::toTicketPassResponse)
+                .toList();
+    }
+
+    @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "displayLabel",target = "seatLabel")
+    @Mapping(source = "qrToken",target = "qrToken")
+    TicketPassResponse toTicketPassResponse(Seat seat);
 }
