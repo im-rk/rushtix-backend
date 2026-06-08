@@ -36,5 +36,12 @@ public interface BookingMapper {
     @Mapping(constant = "STRIPE", target = "provider") // Hardcodes the string value
     BookingUserResponse toUserResponse(Booking booking, PaymentIntent intent);
 
+    @Mapping(source = "booking.id", target = "bookingId")
+    @Mapping(source = "booking.event.id", target = "eventId")
+    @Mapping(source = "booking.event.title", target = "eventTitle")
+    @Mapping(constant = "", target = "clientSecret") // Handshake is over, secret is no longer needed
+    @Mapping(constant = "STRIPE", target = "provider")
+    BookingUserResponse toUserResponse(Booking booking);
+
     List<BookingUserResponse> toUserResponseList(List<Booking> bookings);
 }
