@@ -26,25 +26,23 @@ public class StripeWebhookController {
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     public void handleStripeWebhook(@RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
-            com.stripe.model.Event event;
+        com.stripe.model.Event event;
         try {
-            event= Webhook.constructEvent(payload, sigHeader, endpointSecret);
-        }
-        catch (SignatureVerificationException e)
-        {
+            event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
+        } catch (SignatureVerificationException e) {
             log.error("Stripe webhook signature verification failed: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Stripe webhook signature");
         }
         log.info("Received Stripe webhook event");
 
-        if("payment_intent.succeeded".equals(event.getType()))
-        {
-            PaymentIntent paymentIntent=(PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
-            if(paymentIntent!=null) {
-                String bookingIdStr = paymentIntent.getMetadata().get("bookingId");
+        if ("payment_intent.succeeded".equals(event.getType())) {
+            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
+            if (paymentIntent != null) {
+                String bookingIdStr = paymentIntent.getMetadata().get("booking_id");
                 UUID bookingId = UUID.fromString(bookingIdStr);
+
                 log.info("Webhook alert: Verified payment received for Booking ID: {}. Processing fulfillment...", bookingId);
-                bookingUserService.confirmBookingPayment(bookingId, paymentIntent.getId());
+                bookingUserService.confirmBookingPayment(bookingId, paymentIntent.getId(), payload);
             }
         }
     }

@@ -8,6 +8,8 @@ import com.rushtix.core.security.SecurityUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -26,10 +28,14 @@ public class BookingController {
         User UserContext=entityManager.getReference(User.class,userId);
         return bookingUserService.createBookingReservation(bookingRequst,UserContext);
     }
-
-    @PostMapping("/{bookingId}/confirm")
-    public BookingUserResponse confirmBooking(@PathVariable UUID bookingId,@RequestParam("paymentToken") String paymentToken)
-    {
-        return bookingUserService.confirmBookingPayment(bookingId,paymentToken);
-    }
+//    @GetMapping("/{bookingId}/status")
+//    public ResponseEntity<BookingStatusResponse> checkBookingFulfillmentStatus(
+//            @PathVariable UUID bookingId,
+//            @AuthenticationPrincipal User userContext) {
+//
+//        // 1. Fetch the latest state straight from PostgreSQL
+//        BookingStatusResponse status = bookingUserService.getFulfillmentStatus(bookingId, userContext.getId());
+//
+//        return ResponseEntity.ok(status);
+//    }
 }
