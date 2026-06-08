@@ -136,7 +136,7 @@ public class BookingUserService {
 
         // Secure state transition executions
         payment.setStatus(PaymentStatus.SUCCEEDED);
-        payment.setProviderMetadata(rawJsonMetadata); // Dumps the complete raw string JSON payload directly into Postgres JSONB
+        payment.setProviderMetadata(rawJsonMetadata);
         payment.setCompletedAt(OffsetDateTime.now());
         paymentRepository.save(payment);
 
@@ -147,16 +147,13 @@ public class BookingUserService {
         for (Seat seat : booking.getSeats()) {
             seat.setStatus(SeatStatus.BOOKED);
             seat.setBookedBy(booking.getUser());
-            // Generates completely unique validation tokens per ticket row instance
             seat.setQrToken("RUSH-TIX-" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
         }
 
         Booking savedBooking = bookingRepository.save(booking);
 
-        // 3. Housekeeping: Wipe high-speed tracking locks safely out of Redis RAM container using your verified owner footprint
         redisLockService.releaseSeatLocks(seatIds, booking.getUser().getId());
 
-        // Compiles perfectly now using our overloaded single-parameter mapping strategy layout
         return bookingMapper.toUserResponse(savedBooking);
     }
 

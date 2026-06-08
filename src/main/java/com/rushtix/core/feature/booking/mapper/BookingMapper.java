@@ -32,8 +32,8 @@ public interface BookingMapper {
     @Mapping(source = "booking.id", target = "bookingId")
     @Mapping(source = "booking.event.id", target = "eventId")
     @Mapping(source = "booking.event.title", target = "eventTitle")
-    @Mapping(source = "intent.clientSecret", target = "clientSecret") // ◄ MAP STRIPE LIVE!
-    @Mapping(constant = "STRIPE", target = "provider") // Hardcodes the string value
+    @Mapping(source = "intent.clientSecret", target = "clientSecret")
+    @Mapping(constant = "STRIPE", target = "provider")
     BookingUserResponse toUserResponse(Booking booking, PaymentIntent intent);
 
     @Mapping(source = "booking.id", target = "bookingId")
