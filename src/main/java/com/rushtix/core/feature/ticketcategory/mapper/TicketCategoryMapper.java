@@ -1,18 +1,17 @@
 package com.rushtix.core.feature.ticketcategory.mapper;
 
 import com.rushtix.core.domain.entities.TicketCategory;
+import com.rushtix.core.feature.ticketcategory.dto.PublicTicketCategoryResponse;
 import com.rushtix.core.feature.ticketcategory.dto.TicketCategoryRequest;
 import com.rushtix.core.feature.ticketcategory.dto.TicketCategoryResponse;
 import org.mapstruct.*;
+
+import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING
         , unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TicketCategoryMapper {
 
-    /**
-     * Convert Request DTO to Entity
-     * CRITICAL: Ignore event (set by service), seatsSold, seatsLocked (always start at 0)
-     */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "event", ignore = true)          // Set by Service
     @Mapping(target = "currentPrice", ignore = true)   // Set by Service (initially = basePrice)
@@ -23,10 +22,7 @@ public interface TicketCategoryMapper {
     @Mapping(target = "updatedAt", ignore = true)
     TicketCategory toEntity(TicketCategoryRequest request);
 
-    /**
-     * Convert Entity to Response DTO
-     * Calculates availableSeats on the fly
-     */
+
     @Mapping(source = "category.id", target = "id")
     @Mapping(source = "category.name", target = "name")
     @Mapping(source = "category.basePrice", target = "basePrice")
@@ -43,10 +39,6 @@ public interface TicketCategoryMapper {
     @Mapping(source = "category.dynamicPricingEnabled", target = "dynamicPricingEnabled")
     TicketCategoryResponse toResponse(TicketCategory category);
 
-    /**
-     * Update Entity from Request DTO
-     * Protect: event (cannot change), seatsSold, seatsLocked (booking service controls)
-     */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "event", ignore = true)          // Cannot change event
     @Mapping(target = "seatsSold", ignore = true)      // Booking service controls
@@ -55,4 +47,12 @@ public interface TicketCategoryMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromRequest(TicketCategoryRequest request, @MappingTarget TicketCategory category);
+
+
+    @Mapping(source = "id",target = "categoryId")
+    @Mapping(source="currentPrice", target = "currentPrice")
+    @Mapping(source="isSoldOut", target = "java(category.getAvailableSeats() <= 0)")
+    PublicTicketCategoryResponse toPublicResponse(TicketCategory category);
+
+    List<PublicTicketCategoryResponse> toPublicResponseList(List<TicketCategory> categories);
 }

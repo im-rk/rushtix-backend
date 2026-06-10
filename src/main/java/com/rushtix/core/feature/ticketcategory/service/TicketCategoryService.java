@@ -22,15 +22,6 @@ public class TicketCategoryService {
     private final EventRepository eventRepository;
     private final TicketCategoryMapper mapper;
 
-    /**
-     * Create a new ticket category for an event
-     *
-     * Business Rules:
-     * 1. Event must exist
-     * 2. Total capacity across all categories cannot exceed event's totalSeats
-     * 3. Price boundaries: minPrice <= basePrice <= maxPrice
-     * 4. Initial state: currentPrice = basePrice, seatsSold = 0, seatsLocked = 0
-     */
     @Transactional
     public TicketCategoryResponse createCategory(UUID eventId, UUID organizerId, TicketCategoryRequest request) {
         // Validate event exists AND belongs to the logged-in organizer
@@ -86,12 +77,7 @@ public class TicketCategoryService {
         return mapper.toResponse(savedCategory);
     }
 
-    /**
-     * Get all categories for an event (ordered by displayOrder for UI)
-     *
-     * @param eventId Event ID
-     * @return List of categories in display order
-     */
+
     @Transactional(readOnly = true)
     public List<TicketCategoryResponse> getCategoriesForEvent(UUID eventId) {
         return ticketCategoryRepository.findAllByEventIdOrderByDisplayOrderAsc(eventId)
@@ -100,12 +86,6 @@ public class TicketCategoryService {
                 .toList();
     }
 
-    /**
-     * Get a single category by ID
-     *
-     * @param id Category ID
-     * @return Category details
-     */
     @Transactional(readOnly = true)
     public TicketCategoryResponse getCategoryById(UUID id) {
         TicketCategory category = ticketCategoryRepository.findById(id)
@@ -113,15 +93,6 @@ public class TicketCategoryService {
         return mapper.toResponse(category);
     }
 
-    /**
-     * Update a ticket category
-     *
-     * Constraints:
-     * - Cannot change event (use delete + create instead)
-     * - Cannot change capacity if seats are sold
-     * - Cannot change seatsSold/seatsLocked (booking service controls these)
-     * - Price boundaries must be maintained
-     */
     @Transactional
     public TicketCategoryResponse updateCategory(UUID eventId, UUID organizerId, UUID id, TicketCategoryRequest request) {
         TicketCategory category = findCategoryAndValidateOwnership(id, eventId, organizerId);
@@ -181,11 +152,6 @@ public class TicketCategoryService {
         return mapper.toResponse(updatedCategory);
     }
 
-    /**
-     * Delete a ticket category
-     *
-     * Constraint: Only allow deletion if no seats have been sold
-     */
     @Transactional
     public void deleteCategory(UUID eventId, UUID organizerId, UUID id) {
         TicketCategory category = findCategoryAndValidateOwnership(id, eventId, organizerId);
@@ -199,11 +165,6 @@ public class TicketCategoryService {
         ticketCategoryRepository.delete(category);
     }
 
-    /**
-     * Update the current price (for dynamic pricing)
-     *
-     * Constraint: currentPrice must be within [minPrice, maxPrice]
-     */
     @Transactional
     public TicketCategoryResponse updateCurrentPrice(UUID eventId, UUID organizerId, UUID id, java.math.BigDecimal newPrice) {
         TicketCategory category = findCategoryAndValidateOwnership(id, eventId, organizerId);
@@ -228,9 +189,6 @@ public class TicketCategoryService {
 
     // --- VALIDATION HELPERS ---
 
-    /**
-     * Validate that price boundaries are correct: minPrice <= basePrice <= maxPrice
-     */
     private void validatePriceBoundaries(TicketCategoryRequest request) {
         if (request.minPrice().compareTo(request.basePrice()) > 0) {
             throw new RuntimeException(
