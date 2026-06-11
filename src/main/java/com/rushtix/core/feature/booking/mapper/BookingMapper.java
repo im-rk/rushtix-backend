@@ -34,24 +34,26 @@ public interface BookingMapper {
     @Mapping(source = "booking.id", target = "bookingId")
     @Mapping(source = "booking.event.id", target = "eventId")
     @Mapping(source = "booking.event.title", target = "eventTitle")
-    @Mapping(source = "intent.clientSecret", target = "clientSecret")
-    @Mapping(constant = "STRIPE", target = "provider")
+    @Mapping(source = "intent.clientSecret", target = "paymentClientSecret")
+    @Mapping(source = "booking.status", target = "status")
+    @Mapping(constant = "STRIPE", target = "gatewayType")
     BookingUserResponse toUserResponse(Booking booking, PaymentIntent intent);
 
     @Mapping(source = "booking.id", target = "bookingId")
     @Mapping(source = "booking.event.id", target = "eventId")
     @Mapping(source = "booking.event.title", target = "eventTitle")
-    @Mapping(constant = "", target = "clientSecret") // Handshake is over, secret is no longer needed
-    @Mapping(constant = "STRIPE", target = "provider")
+    @Mapping(constant = "", target = "paymentClientSecret") // Handshake is over, secret is no longer needed
+    @Mapping(constant = "STRIPE", target = "gatewayType")
     BookingUserResponse toUserResponse(Booking booking);
 
     List<BookingUserResponse> toUserResponseList(List<Booking> bookings);
 
 
-    @Mapping(source = "event.title",target = "eventTitle")
-    @Mapping(source = "event.startDateTime",target = "eventStartDateTime")
-    @Mapping(source = "event.venue.name",target = "venueName")
-    @Mapping(source = "event.venue.city",target = "venueCity")
+    @Mapping(source = "booking.event.title",target = "eventTitle")
+    @Mapping(source = "booking.event.eventDate",target = "eventDateTime")
+    @Mapping(source = "booking.event.venue.name",target = "venueName")
+    @Mapping(source = "booking.event.venue.city",target = "venueCity")
+    @Mapping(target = "status",expression = "java(booking.getStatus())")
     @Mapping(source = "booking",target = "tickets", qualifiedByName = "seatsToTicketPasses")
     BookingStatusResponse toStatusResponse(Booking booking);
 
@@ -67,6 +69,6 @@ public interface BookingMapper {
 
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "displayLabel",target = "seatLabel")
-    @Mapping(source = "qrToken",target = "qrToken")
+    @Mapping(source = "qrToken",target = "qrtoken")
     TicketPassResponse toTicketPassResponse(Seat seat);
 }
