@@ -51,7 +51,7 @@ public interface TicketCategoryMapper {
 
     @Mapping(source = "id",target = "categoryId")
     @Mapping(source="currentPrice", target = "currentPrice")
-    @Mapping(source="isSoldOut", target = "java(category.getAvailableSeats() <= 0)")
+    @Mapping(target = "isSoldOut", expression = "java(category.getCapacity() - category.getSeatsSold() - category.getSeatsLocked() <= 0)")
     PublicTicketCategoryResponse toPublicResponse(TicketCategory category);
 
     List<PublicTicketCategoryResponse> toPublicResponseList(List<TicketCategory> categories);

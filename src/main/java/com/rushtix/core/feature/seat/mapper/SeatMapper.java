@@ -1,6 +1,7 @@
 package com.rushtix.core.feature.seat.mapper;
 
 import com.rushtix.core.domain.entities.Seat;
+import com.rushtix.core.feature.seat.dto.PublicSeatResponse;
 import com.rushtix.core.feature.seat.dto.SeatResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -20,4 +21,10 @@ public interface SeatMapper {
     SeatResponse toResponse(Seat seat);
 
     List<SeatResponse> toResponseList(List<Seat> seats);
+
+    @Mapping(target="categoryId", source="category.id")
+    @Mapping(target="isAccessible", source="accessible")
+    PublicSeatResponse toPublicResponse(Seat seat);
+
+    List<PublicSeatResponse> toPublicResponseList(List<Seat> seats);
 }
