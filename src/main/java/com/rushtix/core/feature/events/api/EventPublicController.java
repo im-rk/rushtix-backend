@@ -11,47 +11,18 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/events")
+@RequestMapping("/api/v1/public/events")
 @RequiredArgsConstructor
 public class EventPublicController {
 
     private final EventPublicService eventPublicService;
 
-    /**
-     * Browse all upcoming published events
-     * GET /api/v1/events
-     * Returns: List of event summaries (lightweight)
-     */
-    @GetMapping
-    public List<EventSummaryResponse> getAllUpcomingEvents() {
-        return eventPublicService.getAllUpcomingEvents();
+    public List<EventSummaryResponse> discoverEvents(
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "city", required = false) String city,
+            @RequestParam(value = "state", required = false) String state,
+            @RequestParam(value = "venueId", required = false) UUID venueId) {
+        return eventPublicService.getPublicActiveEvents(category, city, state, venueId);
     }
 
-    /**
-     * Get single event details (public)
-     * GET /api/v1/events/{id}
-     * Returns: Full event details with nested venue information
-     */
-    @GetMapping("/{id}")
-    public EventDetailResponse getEventDetails(@PathVariable UUID id) {
-        return eventPublicService.getEventById(id);
-    }
-
-    /**
-     * Get events by status filter
-     * GET /api/v1/events/status/{status}
-     */
-    @GetMapping("/status/{status}")
-    public List<EventSummaryResponse> getEventsByStatus(@PathVariable EventStatus status) {
-        return eventPublicService.getEventsByStatus(status);
-    }
-
-    /**
-     * Get all events at a specific venue
-     * GET /api/v1/events/venue/{venueId}
-     */
-    @GetMapping("/venue/{venueId}")
-    public List<EventSummaryResponse> getEventsByVenue(@PathVariable UUID venueId) {
-        return eventPublicService.getEventsByVenue(venueId);
-    }
 }
