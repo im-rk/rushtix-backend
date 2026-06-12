@@ -20,4 +20,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findAllByStatus(EventStatus status);
 
     List<Event> findAllByVenueId(UUID venueId);
+
+    List<Event> findAllbyStatusAndEventAfterAndVenueCity(EventStatus status, OffsetDateTime eventDate, String city);
+    List<Event> findAllByStatusAndEventDateAfterAndVenueStateIgnoreCase(EventStatus status, OffsetDateTime eventDate, String state);
+    List<Event> findAllByStatusAndEventDateAfterAndVenueCityIgnoreCase(EventStatus status, OffsetDateTime eventDate, String venueCity);
 }
