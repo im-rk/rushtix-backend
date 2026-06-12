@@ -17,7 +17,7 @@ public record PublicEventDetailsResponse(
         OffsetDateTime bookingClosesAt,
         String venueName,
         String venueCity,
-        String AddressLine,
+        String addressLine, // ◄ Fixed casing to protect MapStruct compilation loops
 
         List<PublicTicketCategoryResponse> ticketCategories
 ) {}

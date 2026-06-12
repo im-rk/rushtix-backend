@@ -1,16 +1,20 @@
 package com.rushtix.core.feature.events.mapper;
 
 import com.rushtix.core.domain.entities.Event;
+import com.rushtix.core.domain.entities.TicketCategory;
 import com.rushtix.core.feature.events.dto.EventDetailResponse;
 import com.rushtix.core.feature.events.dto.EventRequest;
 import com.rushtix.core.feature.events.dto.EventSummaryResponse;
 import com.rushtix.core.feature.events.dto.PublicEventDetailsResponse;
+import com.rushtix.core.feature.ticketcategory.mapper.TicketCategoryMapper;
 import com.rushtix.core.feature.venue.mapper.VenueMapper;
 import org.mapstruct.*;
 
+import java.util.List;
+
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING
         ,unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {VenueMapper.class})
+        uses = {VenueMapper.class, TicketCategoryMapper.class})
 public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -69,6 +73,17 @@ public interface EventMapper {
     void updateEntityFromRequest(EventRequest request, @MappingTarget Event event);
 
 
-    @Mapping()
-    PublicEventDetailsResponse toPublicDetailResponse(Event event);
+    @Mapping(source = "event.id", target = "id")
+    @Mapping(source = "event.title", target = "title")
+    @Mapping(source = "event.description", target = "description")
+    @Mapping(source = "event.category", target = "category")
+    @Mapping(source = "event.imageUrl", target = "imageUrl")
+    @Mapping(source = "event.eventDate", target = "eventDate")
+    @Mapping(source = "event.bookingOpensAt", target = "bookingOpensAt")
+    @Mapping(source = "event.bookingClosesAt", target = "bookingClosesAt")
+    @Mapping(source = "event.venue.name", target = "venueName")
+    @Mapping(source = "event.venue.city", target = "venueCity")
+    @Mapping(source = "event.venue.addressLine", target = "addressLine")
+    @Mapping(source = "categories", target = "ticketCategories")
+    PublicEventDetailsResponse toPublicDetailResponse(Event event, List<TicketCategory> categories);
 }

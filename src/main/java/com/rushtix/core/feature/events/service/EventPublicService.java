@@ -1,12 +1,15 @@
 package com.rushtix.core.feature.events.service;
 
 import com.rushtix.core.domain.entities.Event;
+import com.rushtix.core.domain.entities.TicketCategory;
 import com.rushtix.core.domain.enums.EventStatus;
 import com.rushtix.core.feature.events.dto.EventDetailResponse;
+import com.rushtix.core.feature.events.dto.EventInventoryTickerResponse;
 import com.rushtix.core.feature.events.dto.EventSummaryResponse;
 import com.rushtix.core.feature.events.dto.PublicEventDetailsResponse;
 import com.rushtix.core.feature.events.mapper.EventMapper;
 import com.rushtix.core.feature.events.repository.EventRepository;
+import com.rushtix.core.feature.ticketcategory.repository.TicketCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class EventPublicService {
 
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     @Transactional(readOnly = true)
     public List<EventSummaryResponse> getPublicActiveEvents(String category,String city, String state, UUID venueId)
@@ -63,8 +67,25 @@ public class EventPublicService {
         {
             throw new RuntimeException("Event is not available for public view");
         }
-        return
+        List<TicketCategory> categories=ticketCategoryRepository.findAllByEventIdOrderByDisplayOrderAsc(eventId);
+        return eventMapper.toPublicDetailResponse(event,categories);
     }
 
+    @Transactional(readOnly = true)
+    public EventInventoryTickerResponse getLiveInventoryTicker(UUID eventId)
+    {
+        Event event=eventRepository.findById(eventId)
+                .orElseThrow(()->new RuntimeException("Event not found with id: "+eventId));
+        int remaining = event.getTotalSeats() - event.getSeatsSold() - event.getSeatsLocked();
+        boolean isOpen = OffsetDateTime.now().isAfter(event.getBookingOpensAt())
+                && OffsetDateTime.now().isBefore(event.getBookingClosesAt());
+
+        return new EventInventoryTickerResponse(
+                event.getId(),
+                Math.max(remaining, 0),
+                remaining <= 0,
+                isOpen && event.getStatus() == EventStatus.PUBLISHED
+        );
+    }
 
 }
