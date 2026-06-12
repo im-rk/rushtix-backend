@@ -4,6 +4,7 @@ import com.rushtix.core.domain.entities.Event;
 import com.rushtix.core.feature.events.dto.EventDetailResponse;
 import com.rushtix.core.feature.events.dto.EventRequest;
 import com.rushtix.core.feature.events.dto.EventSummaryResponse;
+import com.rushtix.core.feature.events.dto.PublicEventDetailsResponse;
 import com.rushtix.core.feature.venue.mapper.VenueMapper;
 import org.mapstruct.*;
 
@@ -12,7 +13,6 @@ import org.mapstruct.*;
         uses = {VenueMapper.class})
 public interface EventMapper {
 
-    // --- CREATE: Request → Entity ---
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "organizer", ignore = true)          // Set by Service
     @Mapping(target = "venue", ignore = true)               // Set by Service
@@ -26,7 +26,6 @@ public interface EventMapper {
     @Mapping(target = "cancellationReason", ignore = true)
     Event toEntity(EventRequest request);
 
-    // --- READ: Entity → Summary (For Browse All) ---
     @Mapping(source = "event.id", target = "id")
     @Mapping(source = "event.title", target = "title")
     @Mapping(source = "event.category", target = "category")
@@ -36,7 +35,6 @@ public interface EventMapper {
     @Mapping(source = "event.venue.city", target = "cityName")
     EventSummaryResponse toSummaryResponse(Event event);
 
-    // --- READ: Entity → Detail (For Single Event Page) ---
     @Mapping(source = "event.id", target = "id")
     @Mapping(source = "event.title", target = "title")
     @Mapping(source = "event.description", target = "description")
@@ -57,7 +55,6 @@ public interface EventMapper {
     @Mapping(source = "event.updatedAt", target = "updatedAt")
     EventDetailResponse toDetailResponse(Event event);
 
-    // --- UPDATE: Request → Entity ---
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "organizer", ignore = true)          // Cannot change owner
     @Mapping(target = "venue", ignore = true)               // Cannot change venue
@@ -70,4 +67,8 @@ public interface EventMapper {
     @Mapping(target = "cancelledAt", ignore = true)
     @Mapping(target = "cancellationReason", ignore = true)
     void updateEntityFromRequest(EventRequest request, @MappingTarget Event event);
+
+
+    @Mapping()
+    PublicEventDetailsResponse toPublicDetailResponse(Event event);
 }
