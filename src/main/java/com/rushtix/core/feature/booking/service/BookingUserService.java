@@ -132,7 +132,7 @@ public class BookingUserService {
         }
 
         // 1. Locate and finalize underlying transaction logging parameters
-        Payment payment = paymentRepository.findbyProviderPaymentId(providerPaymentId)
+        Payment payment = paymentRepository.findByProviderPaymentId(providerPaymentId)
                 .orElseThrow(() -> new RuntimeException("Payment tracking ledger item row corrupted or missing"));
 
         // Secure state transition executions
