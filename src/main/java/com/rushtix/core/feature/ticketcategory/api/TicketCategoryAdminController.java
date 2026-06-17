@@ -21,6 +21,18 @@ public class TicketCategoryAdminController {
 
     private final TicketCategoryService ticketCategoryService;
 
+    @GetMapping
+    public java.util.List<TicketCategoryResponse> getCategories(@PathVariable UUID eventId) {
+        return ticketCategoryService.getCategoriesForEvent(eventId);
+    }
+
+    @GetMapping("/{categoryId}")
+    public TicketCategoryResponse getCategoryById(
+            @PathVariable UUID eventId,
+            @PathVariable UUID categoryId) {
+        return ticketCategoryService.getCategoryById(categoryId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TicketCategoryResponse createCategory(

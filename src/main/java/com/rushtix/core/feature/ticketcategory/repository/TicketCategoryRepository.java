@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface TicketCategoryRepository extends JpaRepository<TicketCategory, UUID> {
 
     List<TicketCategory> findAllByEventIdOrderByDisplayOrderAsc(UUID eventId);
+
+    void deleteAllByEventId(UUID eventId);
 }

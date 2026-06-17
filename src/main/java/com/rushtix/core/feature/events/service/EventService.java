@@ -8,6 +8,7 @@ import com.rushtix.core.feature.events.dto.EventDetailResponse;
 import com.rushtix.core.feature.events.dto.EventRequest;
 import com.rushtix.core.feature.events.mapper.EventMapper;
 import com.rushtix.core.feature.events.repository.EventRepository;
+import com.rushtix.core.feature.ticketcategory.repository.TicketCategoryRepository;
 import com.rushtix.core.feature.venue.repository.VenueRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class EventService {
     private final EntityManager entityManager;
     private final VenueRepository venueRepository;
     private final JpaRepository<User, UUID> userRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     @Transactional
     public EventDetailResponse createEvent(EventRequest request, UUID organizerId) {
@@ -136,6 +138,9 @@ public class EventService {
             throw new RuntimeException("Only DRAFT events can be deleted");
         }
 
+        // Delete all associated ticket categories first to prevent foreign key constraint violations
+        ticketCategoryRepository.deleteAllByEventId(id);
+        
         eventRepository.delete(event);
     }
 
