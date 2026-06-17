@@ -17,6 +17,7 @@ public record OrganizerVenueResponse(
         String timezone,
         BigDecimal latitude,
         BigDecimal longitude,
+        String seatMapConfig,
         VenueStatus status,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
