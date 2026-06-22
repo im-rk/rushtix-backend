@@ -2,6 +2,7 @@ package com.rushtix.core.feature.booking.api;
 
 import com.rushtix.core.domain.entities.User;
 import com.rushtix.core.feature.booking.dto.BookingRequst;
+import com.rushtix.core.feature.booking.dto.BookingReservationResponse;
 import com.rushtix.core.feature.booking.dto.BookingUserResponse;
 import com.rushtix.core.feature.booking.service.BookingUserService;
 import com.rushtix.core.security.SecurityUtils;
@@ -21,12 +22,24 @@ public class BookingController {
     private final BookingUserService bookingUserService;
     private final EntityManager entityManager;
 
+    //Locks seats and returns the bare reservation container details
     @PostMapping("/reserve")
-    public BookingUserResponse confirmPayment(@RequestBody @Valid BookingRequst bookingRequst)
-    {
-        UUID userId= SecurityUtils.getCurrentUserId();
-        User UserContext=entityManager.getReference(User.class,userId);
-        return bookingUserService.createBookingReservation(bookingRequst,UserContext);
+    public ResponseEntity<BookingReservationResponse> reserve(@RequestBody @Valid BookingRequst bookingRequst) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        User userContext = entityManager.getReference(User.class, userId);
+
+        BookingReservationResponse response = bookingUserService.createBookingReservation(bookingRequst, userContext);
+        return ResponseEntity.ok(response);
+    }
+
+    //Returns the full booking details ALONG WITH the Stripe client keys
+    @PostMapping("/{bookingId}/pay-single")
+    public ResponseEntity<BookingUserResponse> executeSinglePay(
+            @PathVariable UUID bookingId,
+            @RequestParam String idempotencyKey) {
+
+        BookingUserResponse response = bookingUserService.initiateSinglePaymentExecution(bookingId, idempotencyKey);
+        return ResponseEntity.ok(response);
     }
 //    @GetMapping("/{bookingId}/status")
 //    public ResponseEntity<BookingStatusResponse> checkBookingFulfillmentStatus(

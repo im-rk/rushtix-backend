@@ -5,6 +5,7 @@ import com.rushtix.core.domain.enums.BookingStatus;
 import com.rushtix.core.domain.enums.PaymentStatus;
 import com.rushtix.core.domain.enums.SeatStatus;
 import com.rushtix.core.feature.booking.dto.BookingRequst;
+import com.rushtix.core.feature.booking.dto.BookingReservationResponse;
 import com.rushtix.core.feature.booking.dto.BookingStatusResponse;
 import com.rushtix.core.feature.booking.dto.BookingUserResponse;
 import com.rushtix.core.feature.booking.mapper.BookingMapper;
@@ -71,7 +72,7 @@ public class BookingUserService {
     }
 
     @Transactional
-    public BookingUserResponse createBookingReservation(BookingRequst request, User userContext) {
+    public BookingReservationResponse createBookingReservation(BookingRequst request, User userContext) {
         OffsetDateTime windowExpiration = OffsetDateTime.now().plusMinutes(10);
 
         // REUSE THE SHARED LOCK ENGINE HERE
@@ -100,21 +101,34 @@ public class BookingUserService {
         }
         Booking savedBooking = bookingRepository.save(booking);
 
-        // Handle the single Payment Intent creation
-        PaymentIntent intent = paymentGatewayService.createPaymentIntent(savedBooking.getId(), calculatedTotal);
+        return bookingMapper.toReservationResponse(savedBooking);
+    }
+
+    @Transactional
+    public BookingUserResponse initiateSinglePaymentExecution(UUID bookingId, String idempotencyKey) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking tracking context reference not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Booking is not in a payable pending state");
+        }
+
+        // Generate the single 100% full amount payment intent via Stripe here
+        PaymentIntent intent = paymentGatewayService.createPaymentIntent(booking.getId(), booking.getTotalAmount());
+
         Payment paymentLedger = Payment.builder()
-                .booking(savedBooking)
+                .booking(booking)
                 .provider("STRIPE")
                 .providerPaymentId(intent.getId())
-                .amount(calculatedTotal)
+                .amount(booking.getTotalAmount())
                 .currency("INR")
                 .status(PaymentStatus.PENDING)
-                .idempotencyKey(request.idempotencyKey())
+                .idempotencyKey(idempotencyKey)
                 .providerMetadata("{}")
                 .build();
         paymentRepository.save(paymentLedger);
 
-        return bookingMapper.toUserResponse(savedBooking, intent);
+        return bookingMapper.toUserResponse(booking, intent);
     }
 
     @Transactional
