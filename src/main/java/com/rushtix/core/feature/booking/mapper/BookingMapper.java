@@ -46,6 +46,8 @@ public interface BookingMapper {
     @Mapping(constant = "STRIPE", target = "gatewayType")
     BookingUserResponse toUserResponse(Booking booking);
 
+    BookingReservationResponse toReservationResponse(Booking booking);
+
     List<BookingUserResponse> toUserResponseList(List<Booking> bookings);
 
 
@@ -71,4 +73,6 @@ public interface BookingMapper {
     @Mapping(source = "displayLabel",target = "seatLabel")
     @Mapping(source = "qrToken",target = "qrtoken")
     TicketPassResponse toTicketPassResponse(Seat seat);
+
+
 }

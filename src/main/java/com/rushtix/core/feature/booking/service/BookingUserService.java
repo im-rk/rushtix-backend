@@ -5,6 +5,7 @@ import com.rushtix.core.domain.enums.BookingStatus;
 import com.rushtix.core.domain.enums.PaymentStatus;
 import com.rushtix.core.domain.enums.SeatStatus;
 import com.rushtix.core.feature.booking.dto.BookingRequst;
+import com.rushtix.core.feature.booking.dto.BookingReservationResponse;
 import com.rushtix.core.feature.booking.dto.BookingStatusResponse;
 import com.rushtix.core.feature.booking.dto.BookingUserResponse;
 import com.rushtix.core.feature.booking.mapper.BookingMapper;
@@ -35,29 +36,18 @@ public class BookingUserService {
     private final PaymentRepository paymentRepository;
 
     @Transactional
-    public BookingUserResponse createBookingReservation(BookingRequst request, User userContext) {
-
-        boolean locksAcquired=redisLockService.acquireSeatLocks(request.seatIds(),userContext.getId(),10);
-        if(!locksAcquired) {
+    public List<Seat> verifyAndHoldInventory(List<UUID> seatIds, User userContext, OffsetDateTime expiration) {
+        boolean locksAcquired = redisLockService.acquireSeatLocks(seatIds, userContext.getId(), 10);
+        if (!locksAcquired) {
             throw new RuntimeException("Unable to acquire locks on selected seats. Please try again.");
         }
 
-        try
-        {
-            Event event = eventRepository.findById(request.eventId())
-                    .orElseThrow(() -> new RuntimeException("Event layout verification failed"));
-
-            // 1. Acquire Database Lock on seats to isolate threads
-            List<Seat> seats = seatRepository.findAndLockSeatsByIds(request.seatIds());
-
-            if (seats.size() != request.seatIds().size()) {
+        try {
+            List<Seat> seats = seatRepository.findAndLockSeatsByIds(seatIds);
+            if (seats.size() != seatIds.size()) {
                 throw new RuntimeException("Selected seats count mismatch or inventory mismatch");
             }
 
-            BigDecimal calculatedTotal = BigDecimal.ZERO;
-            OffsetDateTime windowExpiration = OffsetDateTime.now().plusMinutes(10);
-
-            // 2. Evaluate booking state safety boundary conditions
             for (Seat seat : seats) {
                 boolean isLockStale = seat.getStatus() == SeatStatus.LOCKED &&
                         seat.getLockedUntil() != null &&
@@ -68,55 +58,77 @@ public class BookingUserService {
                 }
 
                 TicketCategory category = seat.getCategory();
-
-                // Snapshot dynamic pricing parameters directly onto the seat item row
                 seat.setPricePaid(category.getCurrentPrice());
-                seat.setPriceMultiplier(BigDecimal.ONE); // For base snapshot
+                seat.setPriceMultiplier(BigDecimal.ONE);
                 seat.setStatus(SeatStatus.LOCKED);
-                seat.setLockedUntil(windowExpiration);
+                seat.setLockedUntil(expiration);
                 seat.setLockedBy(userContext);
-
-                calculatedTotal = calculatedTotal.add(category.getCurrentPrice());
             }
-
-            // 3. Persist transaction container
-            Booking booking = Booking.builder()
-                    .user(userContext)
-                    .event(event)
-                    .status(BookingStatus.PENDING)
-                    .totalAmount(calculatedTotal)
-                    .idempotencyKey(request.idempotencyKey())
-                    .expiresAt(windowExpiration)
-                    .build();
-
-            // Crosslink entities
-            for (Seat seat : seats) {
-                seat.setBooking(booking);
-                booking.getSeats().add(seat);
-            }
-            Booking savedBooking = bookingRepository.save(booking);
-
-            PaymentIntent intent=paymentGatewayService.createPaymentIntent(savedBooking.getId(),calculatedTotal);
-            Payment paymentLedger=Payment.builder()
-                    .booking(savedBooking)
-                    .provider("STRIPE")
-                    .providerPaymentId(intent.getId())
-                    .amount(calculatedTotal)
-                    .currency("INR")
-                    .status(PaymentStatus.PENDING)
-                    .idempotencyKey(request.idempotencyKey())
-                    .providerMetadata("{}")
-                    .build();
-            paymentRepository.save(paymentLedger);
-
-            return bookingMapper.toUserResponse(savedBooking,intent);
-        }
-        catch(Exception e)
-        {
-            redisLockService.releaseSeatLocks(request.seatIds(),userContext.getId());
+            return seatRepository.saveAll(seats);
+        } catch (Exception e) {
+            redisLockService.releaseSeatLocks(seatIds, userContext.getId());
             throw e;
         }
+    }
 
+    @Transactional
+    public BookingReservationResponse createBookingReservation(BookingRequst request, User userContext) {
+        OffsetDateTime windowExpiration = OffsetDateTime.now().plusMinutes(10);
+
+        // REUSE THE SHARED LOCK ENGINE HERE
+        List<Seat> seats = verifyAndHoldInventory(request.seatIds(), userContext, windowExpiration);
+
+        Event event = eventRepository.findById(request.eventId())
+                .orElseThrow(() -> new RuntimeException("Event layout verification failed"));
+
+        BigDecimal calculatedTotal = seats.stream()
+                .map(Seat::getPricePaid)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Persist transaction container
+        Booking booking = Booking.builder()
+                .user(userContext)
+                .event(event)
+                .status(BookingStatus.PENDING)
+                .totalAmount(calculatedTotal)
+                .idempotencyKey(request.idempotencyKey())
+                .expiresAt(windowExpiration)
+                .build();
+
+        for (Seat seat : seats) {
+            seat.setBooking(booking);
+            booking.getSeats().add(seat);
+        }
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return bookingMapper.toReservationResponse(savedBooking);
+    }
+
+    @Transactional
+    public BookingUserResponse initiateSinglePaymentExecution(UUID bookingId, String idempotencyKey) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking tracking context reference not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Booking is not in a payable pending state");
+        }
+
+        // Generate the single 100% full amount payment intent via Stripe here
+        PaymentIntent intent = paymentGatewayService.createPaymentIntent(booking.getId(), booking.getTotalAmount());
+
+        Payment paymentLedger = Payment.builder()
+                .booking(booking)
+                .provider("STRIPE")
+                .providerPaymentId(intent.getId())
+                .amount(booking.getTotalAmount())
+                .currency("INR")
+                .status(PaymentStatus.PENDING)
+                .idempotencyKey(idempotencyKey)
+                .providerMetadata("{}")
+                .build();
+        paymentRepository.save(paymentLedger);
+
+        return bookingMapper.toUserResponse(booking, intent);
     }
 
     @Transactional
