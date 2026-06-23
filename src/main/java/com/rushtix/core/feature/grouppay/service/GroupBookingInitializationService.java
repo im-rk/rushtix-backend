@@ -72,10 +72,29 @@ public class GroupBookingInitializationService {
                     .build();
             GroupPaymentItem savedItem=groupPaymentItemRepository.save(item);
 
-            try{
-                String checkoutUrl=paymentGatewayService.createStripe
+            try {
+                // Call Stripe Checkout Hosted API (Passing our internal item primary key as tracking metadata)
+                String checkoutUrl = paymentGatewayService.createStripeCheckoutSessionUrl(savedItem.getId(), perPersonAmount);
+                savedItem.set(checkoutUrl);
+                groupPaymentItemRepository.save(savedItem);
+
+                // Assign the first link directly to the group leader
+                if (i == 0) {
+                    initiatorUrl = checkoutUrl;
+                    savedItem.setFriendEmail(booking.getUser().getEmail());
+                    groupPaymentItemRepository.save(savedItem);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Stripe initialization crashed during parallel checkout token generation", e);
             }
         }
+
+        return new InitiateGroupResponse(
+                savedSaga.getId(),
+                initiatorUrl,
+                savedSaga.getExpiresAt(),
+                "Split-Pay initialization complete. Group hold locked for 10 minutes."
+        );
     }
 
 }

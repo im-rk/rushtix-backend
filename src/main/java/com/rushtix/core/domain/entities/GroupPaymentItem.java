@@ -27,6 +27,9 @@ public class GroupPaymentItem {
     private String friendEmail;
     private UUID assignedSeatId;
 
+    @Column(name = "stripe_checkout_url",length = 1024)
+    private String stripeCheckoutUrl;
+
     private String stripePaymentIntentId;
 
     @Enumerated(EnumType.STRING)
