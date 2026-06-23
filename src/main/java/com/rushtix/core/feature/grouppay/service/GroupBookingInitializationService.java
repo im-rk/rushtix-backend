@@ -47,7 +47,7 @@ public class GroupBookingInitializationService {
         BigDecimal perPersonAmount=booking.getTotalAmount().divide(BigDecimal.valueOf(seatCount),2, RoundingMode.HALF_UP);
 
         GroupBooking masterSaga=GroupBooking.builder()
-                .evenetId(booking.getEvent().getId())
+                .eventId(booking.getEvent().getId())
                 .initiatorUserId(booking.getUser().getId())
                 .status(GroupBookingStatus.PENDING_GROUP_PAYMENT)
                 .totalAmount(booking.getTotalAmount())
@@ -75,7 +75,7 @@ public class GroupBookingInitializationService {
             try {
                 // Call Stripe Checkout Hosted API (Passing our internal item primary key as tracking metadata)
                 String checkoutUrl = paymentGatewayService.createStripeCheckoutSessionUrl(savedItem.getId(), perPersonAmount);
-                savedItem.set(checkoutUrl);
+                savedItem.setStripeCheckoutUrl(checkoutUrl);
                 groupPaymentItemRepository.save(savedItem);
 
                 // Assign the first link directly to the group leader
