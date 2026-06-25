@@ -23,7 +23,7 @@ public class GroupBooking {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private UUID evenetId;
+    private UUID eventId;
     private UUID initiatorUserId;
 
 
