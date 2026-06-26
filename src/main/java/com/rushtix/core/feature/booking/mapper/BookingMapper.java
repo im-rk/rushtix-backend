@@ -46,6 +46,7 @@ public interface BookingMapper {
     @Mapping(constant = "STRIPE", target = "gatewayType")
     BookingUserResponse toUserResponse(Booking booking);
 
+    @Mapping(source = "id", target = "bookingId")
     BookingReservationResponse toReservationResponse(Booking booking);
 
     List<BookingUserResponse> toUserResponseList(List<Booking> bookings);
