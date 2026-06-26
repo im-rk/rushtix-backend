@@ -19,6 +19,7 @@ public class EventPublicController {
 
     private final EventPublicService eventPublicService;
 
+    @GetMapping
     public List<EventSummaryResponse> discoverEvents(
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "city", required = false) String city,

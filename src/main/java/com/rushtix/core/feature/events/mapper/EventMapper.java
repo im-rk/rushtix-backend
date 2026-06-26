@@ -37,7 +37,8 @@ public interface EventMapper {
     @Mapping(source = "event.eventDate", target = "eventDate")
     @Mapping(source = "event.venue.name", target = "venueName")
     @Mapping(source = "event.venue.city", target = "cityName")
-    EventSummaryResponse toSummaryResponse(Event event);
+    @Mapping(source = "startingPrice", target = "startingPrice")
+    EventSummaryResponse toSummaryResponse(Event event, java.math.BigDecimal startingPrice);
 
     @Mapping(source = "event.id", target = "id")
     @Mapping(source = "event.title", target = "title")
