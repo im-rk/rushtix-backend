@@ -36,13 +36,18 @@ public class StripeWebhookController {
         log.info("Received Stripe webhook event");
 
         if ("payment_intent.succeeded".equals(event.getType())) {
-            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
-            if (paymentIntent != null) {
+            com.stripe.model.StripeObject stripeObject = event.getDataObjectDeserializer().deserializeUnsafe();
+            if (stripeObject instanceof PaymentIntent paymentIntent) {
                 String bookingIdStr = paymentIntent.getMetadata().get("booking_id");
-                UUID bookingId = UUID.fromString(bookingIdStr);
-
-                log.info("Webhook alert: Verified payment received for Booking ID: {}. Processing fulfillment...", bookingId);
-                bookingUserService.confirmBookingPayment(bookingId, paymentIntent.getId(), payload);
+                if (bookingIdStr != null) {
+                    UUID bookingId = UUID.fromString(bookingIdStr);
+                    log.info("Webhook alert: Verified payment received for Booking ID: {}. Processing fulfillment...", bookingId);
+                    bookingUserService.confirmBookingPayment(bookingId, paymentIntent.getId(), payload);
+                } else {
+                    log.warn("PaymentIntent {} succeeded but missing booking_id in metadata", paymentIntent.getId());
+                }
+            } else {
+                log.error("Failed to deserialize PaymentIntent from webhook event payload");
             }
         }
     }
