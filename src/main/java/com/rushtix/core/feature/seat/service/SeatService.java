@@ -41,6 +41,12 @@ public class SeatService {
             throw new RuntimeException("Category does not belong to event " + eventId);
         }
 
+        int currentAllocated = seatRepository.countByCategoryId(category.getId());
+        if (currentAllocated + request.count() > category.getCapacity()) {
+            throw new RuntimeException(String.format("Cannot generate %d seats. Category '%s' only has %d unallocated seats remaining (Capacity: %d).", 
+                request.count(), category.getName(), category.getCapacity() - currentAllocated, category.getCapacity()));
+        }
+
         List<Seat> seatsToSave = new ArrayList<>();
 
         for (int i = 0; i < request.count(); i++) {

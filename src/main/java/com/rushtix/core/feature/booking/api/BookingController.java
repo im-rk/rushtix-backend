@@ -41,6 +41,16 @@ public class BookingController {
         BookingUserResponse response = bookingUserService.initiateSinglePaymentExecution(bookingId, idempotencyKey);
         return ResponseEntity.ok(response);
     }
+
+    //Returns booking details for the user checkout page
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<BookingUserResponse> getBookingDetails(
+            @PathVariable UUID bookingId) {
+        
+        UUID userId = SecurityUtils.getCurrentUserId();
+        BookingUserResponse response = bookingUserService.getBookingDetailsForUser(bookingId, userId);
+        return ResponseEntity.ok(response);
+    }
 //    @GetMapping("/{bookingId}/status")
 //    public ResponseEntity<BookingStatusResponse> checkBookingFulfillmentStatus(
 //            @PathVariable UUID bookingId,

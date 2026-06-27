@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/events/{eventId}/categories")
+@RequestMapping("/api/v1/public/events/{eventId}/categories")
 @RequiredArgsConstructor
 public class TicketCategoryPublicController {
 

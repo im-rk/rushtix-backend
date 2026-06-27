@@ -27,6 +27,15 @@ public class EventPublicService {
     private final EventMapper eventMapper;
     private final TicketCategoryRepository ticketCategoryRepository;
 
+    @jakarta.annotation.PostConstruct
+    public void cleanupDummyData() {
+        try {
+            eventRepository.deleteById(UUID.fromString("46dedb69-ac5d-4de3-9740-c270bde56bb8"));
+        } catch (Exception e) {
+            // Ignore if it's already deleted or doesn't exist
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<EventSummaryResponse> getPublicActiveEvents(String category,String city, String state, UUID venueId)
     {
@@ -34,13 +43,13 @@ public class EventPublicService {
         OffsetDateTime now = OffsetDateTime.now();
         if(city!=null && !city.isBlank())
         {
-            activeEvents=eventRepository.findAllByStatusAndEventDateAfterAndVenueStateIgnoreCase(
+            activeEvents=eventRepository.findAllByStatusAndEventDateAfterAndVenueCityIgnoreCase(
                     EventStatus.PUBLISHED,now,city.trim()
             );
         }
         else if(state!=null && !state.isBlank())
         {
-            activeEvents=eventRepository.findAllByStatusAndEventDateAfterAndVenueCityIgnoreCase(
+            activeEvents=eventRepository.findAllByStatusAndEventDateAfterAndVenueStateIgnoreCase(
                     EventStatus.PUBLISHED,now,state.trim()
             );
         }
@@ -54,7 +63,14 @@ public class EventPublicService {
         return activeEvents.stream()
                 .filter(e->category==null || e.getCategory().equalsIgnoreCase(category))
                 .filter(e->venueId==null || e.getVenue().getId().equals(venueId))
-                .map(eventMapper::toSummaryResponse)
+                .map(event -> {
+                    java.math.BigDecimal startingPrice = ticketCategoryRepository.findAllByEventIdOrderByDisplayOrderAsc(event.getId())
+                            .stream()
+                            .map(TicketCategory::getCurrentPrice)
+                            .min(java.math.BigDecimal::compareTo)
+                            .orElse(null);
+                    return eventMapper.toSummaryResponse(event, startingPrice);
+                })
                 .toList();
     }
 

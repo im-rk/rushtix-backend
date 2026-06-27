@@ -25,6 +25,8 @@ public interface SeatRepository extends JpaRepository<Seat, UUID> {
     // The hard clear execution query
     void deleteAllByEventId(UUID eventId);
 
+    int countByCategoryId(UUID categoryId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Seat s WHERE s.id IN :seatIds")
     List<Seat> findAndLockSeatsByIds(@Param("seatIds") List<UUID> seatIds);

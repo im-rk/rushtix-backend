@@ -14,5 +14,6 @@ public record EventSummaryResponse(
         String imageUrl,
         OffsetDateTime eventDate,
         String venueName,
-        String cityName
+        String cityName,
+        java.math.BigDecimal startingPrice
 ) {}

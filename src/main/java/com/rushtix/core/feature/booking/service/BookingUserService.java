@@ -122,7 +122,7 @@ public class BookingUserService {
                 .providerPaymentId(intent.getId())
                 .amount(booking.getTotalAmount())
                 .currency("INR")
-                .status(PaymentStatus.PENDING)
+                .status(PaymentStatus.INITIATED)
                 .idempotencyKey(idempotencyKey)
                 .providerMetadata("{}")
                 .build();
@@ -179,5 +179,16 @@ public class BookingUserService {
             throw new RuntimeException("Unauthorized access to booking status");
         }
         return bookingMapper.toStatusResponse(booking);
+    }
+
+    @Transactional(readOnly = true)
+    public BookingUserResponse getBookingDetailsForUser(UUID bookingId, UUID authenticatedUserId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking transaction not found"));
+
+        if (!booking.getUser().getId().equals(authenticatedUserId)) {
+            throw new RuntimeException("Unauthorized access to booking details");
+        }
+        return bookingMapper.toUserResponse(booking);
     }
 }
