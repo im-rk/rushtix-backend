@@ -71,11 +71,11 @@ public class Event {
     @Column(name = "total_seats", nullable = false)
     private int totalSeats;
 
-    @Column(name = "seats_sold", nullable = false)
-    private int seatsSold = 0;
+    @org.hibernate.annotations.Formula("(SELECT CAST(COALESCE(COUNT(s.id), 0) AS int) FROM seats s WHERE s.event_id = id AND s.status = 'BOOKED')")
+    private int seatsSold;
 
-    @Column(name = "seats_locked", nullable = false)
-    private int seatsLocked = 0;
+    @org.hibernate.annotations.Formula("(SELECT CAST(COALESCE(COUNT(s.id), 0) AS int) FROM seats s WHERE s.event_id = id AND s.status = 'LOCKED')")
+    private int seatsLocked;
 
     // Optimistic Locking for concurrent booking
     @Version

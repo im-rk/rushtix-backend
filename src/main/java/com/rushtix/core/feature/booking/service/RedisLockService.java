@@ -45,20 +45,24 @@ public class RedisLockService {
 
     public void releaseSeatLocks(List<UUID> seatIds,UUID userId)
     {
-        String userIdStr = userId.toString();
-        List<String> keysToDelete = new java.util.ArrayList<>();
+        try {
+            String userIdStr = userId.toString();
+            List<String> keysToDelete = new java.util.ArrayList<>();
 
-        for (UUID seatId : seatIds) {
-            String lockKey = LOCK_KEY_PREFIX + seatId;
-            String currentValue = redisTemplate.opsForValue().get(lockKey);
+            for (UUID seatId : seatIds) {
+                String lockKey = LOCK_KEY_PREFIX + seatId;
+                String currentValue = redisTemplate.opsForValue().get(lockKey);
 
-            if (userIdStr.equals(currentValue)) {
-                keysToDelete.add(lockKey);
+                if (userIdStr.equals(currentValue)) {
+                    keysToDelete.add(lockKey);
+                }
             }
-        }
 
-        if (!keysToDelete.isEmpty()) {
-            redisTemplate.delete(keysToDelete);
+            if (!keysToDelete.isEmpty()) {
+                redisTemplate.delete(keysToDelete);
+            }
+        } catch (Exception e) {
+            System.err.println("Redis fallback activated during release: Unable to connect to Redis. " + e.getMessage());
         }
     }
 }
