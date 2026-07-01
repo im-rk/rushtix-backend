@@ -55,6 +55,7 @@ public interface EventMapper {
     @Mapping(source = "event.seatsLocked", target = "seatsLocked")
     @Mapping(expression = "java(event.getTotalSeats() - event.getSeatsSold() - event.getSeatsLocked())",
              target = "availableSeats")
+    @Mapping(source = "event.totalRevenue", target = "totalRevenue")
     @Mapping(source = "event.venue", target = "venue")  // Uses VenueMapper to convert
     @Mapping(source = "event.createdAt", target = "createdAt")
     @Mapping(source = "event.updatedAt", target = "updatedAt")
@@ -85,6 +86,9 @@ public interface EventMapper {
     @Mapping(source = "event.venue.name", target = "venueName")
     @Mapping(source = "event.venue.city", target = "venueCity")
     @Mapping(source = "event.venue.addressLine", target = "addressLine")
+    @Mapping(source = "event.status", target = "status")
+    @Mapping(source = "event.totalSeats", target = "totalSeats")
+    @Mapping(expression = "java(event.getTotalSeats() - event.getSeatsSold() - event.getSeatsLocked())", target = "availableSeats")
     @Mapping(source = "categories", target = "ticketCategories")
     PublicEventDetailsResponse toPublicDetailResponse(Event event, List<TicketCategory> categories);
 }

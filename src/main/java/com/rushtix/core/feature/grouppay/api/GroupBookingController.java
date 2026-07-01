@@ -20,11 +20,13 @@ public class GroupBookingController {
     private final GroupBookingInitializationService initializationService;
     private final GroupBookingClaimService claimService;
 
+    @org.springframework.web.bind.annotation.PostMapping("/initiate")
     public ResponseEntity<InitiateGroupResponse> initializeSplitPay(@RequestBody @Valid InitiateGroupRequest request)
     {
         return ResponseEntity.ok(initializationService.convertToGroupPaySaga(request));
     }
 
+    @org.springframework.web.bind.annotation.PostMapping("/claim")
     public ResponseEntity<ClaimSplitLinkResponse> claimSlot(@RequestBody @Valid ClaimSplitLinkRequest request)
     {
         return ResponseEntity.ok(claimService.claimUnpaidSlot(request));

@@ -77,6 +77,9 @@ public class Event {
     @org.hibernate.annotations.Formula("(SELECT CAST(COALESCE(COUNT(s.id), 0) AS int) FROM seats s WHERE s.event_id = id AND s.status = 'LOCKED')")
     private int seatsLocked;
 
+    @org.hibernate.annotations.Formula("(SELECT CAST(COALESCE(SUM(s.price_paid), 0) AS numeric) FROM seats s WHERE s.event_id = id AND s.status = 'BOOKED')")
+    private java.math.BigDecimal totalRevenue;
+
     // Optimistic Locking for concurrent booking
     @Version
     @Column(nullable = false)
