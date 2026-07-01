@@ -3,8 +3,11 @@ package com.rushtix.core.feature.booking.service;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCancelParams;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +79,19 @@ public class PaymentGatewayService {
         } catch (StripeException e) {
             log.error("Failed to generate Stripe Checkout Session link: ", e);
             throw new RuntimeException("Payment gateway link initialization failed. Please try again.");
+        }
+    }
+
+    public void refundCheckoutPayment(String stripePaymentIntentId) {
+        try {
+            RefundCreateParams params = RefundCreateParams.builder()
+                    .setPaymentIntent(stripePaymentIntentId)
+                    .build();
+
+            com.stripe.model.Refund.create(params);
+            log.info("Stripe refund processed successfully for Intent ID: {}", stripePaymentIntentId);
+        } catch (com.stripe.exception.StripeException e) {
+            throw new RuntimeException("Failed to execute Stripe refund line entry", e);
         }
     }
 }

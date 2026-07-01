@@ -19,5 +19,9 @@ public record PublicEventDetailsResponse(
         String venueCity,
         String addressLine, // ◄ Fixed casing to protect MapStruct compilation loops
 
+        com.rushtix.core.domain.enums.EventStatus status,
+        int totalSeats,
+        int availableSeats,
+
         List<PublicTicketCategoryResponse> ticketCategories
 ) {}

@@ -25,6 +25,7 @@ public record EventDetailResponse(
         int seatsSold,
         int seatsLocked,
         int availableSeats,
+        java.math.BigDecimal totalRevenue,
         OrganizerVenueResponse venue,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
