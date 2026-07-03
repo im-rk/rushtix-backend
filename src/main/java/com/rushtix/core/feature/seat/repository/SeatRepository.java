@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, UUID> {
+    boolean existsByEventId(UUID eventId);
     boolean existsByEventIdAndRowLabelAndSeatNumber(UUID eventId, String rowLabel, String seatNumber);
     List<Seat> findAllByEventIdOrderByRowLabelAscSeatNumberAsc(UUID eventId);
 
