@@ -31,4 +31,16 @@ public class GroupBookingController {
     {
         return ResponseEntity.ok(claimService.claimUnpaidSlot(request));
     }
+    @org.springframework.web.bind.annotation.GetMapping("/debug/{sagaId}")
+    public ResponseEntity<?> debugGroupBooking(@org.springframework.web.bind.annotation.PathVariable java.util.UUID sagaId, @org.springframework.beans.factory.annotation.Autowired com.rushtix.core.feature.grouppay.repository.GroupBookingRepository groupBookingRepository) {
+        var saga = groupBookingRepository.findById(sagaId).orElse(null);
+        if (saga == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(saga.getPaymentItems().stream().map(item -> 
+            java.util.Map.of(
+                "id", item.getId(),
+                "friendEmail", item.getFriendEmail() == null ? "NULL" : item.getFriendEmail(),
+                "status", item.getStatus()
+            )
+        ).toList());
+    }
 }

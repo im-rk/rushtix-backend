@@ -35,18 +35,18 @@ public class GroupBookingClaimService {
             throw new RuntimeException("The 10-minute payment window for this group has already expired");
         }
         boolean alreadyClaimed=saga.getPaymentItems().stream()
-                .anyMatch(item->request.friendEmail().trim().toLowerCase().equals(item.getFriendEmail()));
+                .anyMatch(item->request.friendEmail().trim().equalsIgnoreCase(item.getFriendEmail()));
 
         if (alreadyClaimed) {
             GroupPaymentItem existingItem = saga.getPaymentItems().stream()
-                    .filter(item -> request.friendEmail().trim().toLowerCase().equals(item.getFriendEmail()))
+                    .filter(item -> request.friendEmail().trim().equalsIgnoreCase(item.getFriendEmail()))
                     .findFirst().get();
             return new ClaimSplitLinkResponse(existingItem.getStripeCheckoutUrl(), "Returning existing active payment session.");
         }
 
         // Atomic check: Find an unallocated item row slot
         GroupPaymentItem openSlot = saga.getPaymentItems().stream()
-                .filter(item -> item.getStatus() == SplitStatus.PENDING && item.getFriendEmail() == null)
+                .filter(item -> item.getStatus() == SplitStatus.PENDING && (item.getFriendEmail() == null || item.getFriendEmail().trim().isEmpty()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("All ticket slots for this group have already been claimed!"));
 

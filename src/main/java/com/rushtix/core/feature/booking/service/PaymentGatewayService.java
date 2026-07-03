@@ -11,6 +11,7 @@ import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -44,13 +45,16 @@ public class PaymentGatewayService {
         }
     }
 
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
     public String createStripeCheckoutSessionUrl(UUID groupPaymentItemId, BigDecimal itemAmount) {
         long amountInSmallestUnit = itemAmount.multiply(BigDecimal.valueOf(100)).longValue();
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("https://rushtix.com/booking/group/success?itemId=" + groupPaymentItemId)
-                .setCancelUrl("https://rushtix.com/booking/group/cancel")
+                .setSuccessUrl(frontendUrl + "/booking/group/success?itemId=" + groupPaymentItemId)
+                .setCancelUrl(frontendUrl + "/booking/group/cancel")
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
                                 .setQuantity(1L)
