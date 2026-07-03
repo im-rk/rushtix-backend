@@ -8,6 +8,7 @@ import com.rushtix.core.feature.events.dto.EventDetailResponse;
 import com.rushtix.core.feature.events.dto.EventRequest;
 import com.rushtix.core.feature.events.mapper.EventMapper;
 import com.rushtix.core.feature.events.repository.EventRepository;
+import com.rushtix.core.feature.seat.repository.SeatRepository;
 import com.rushtix.core.feature.ticketcategory.repository.TicketCategoryRepository;
 import com.rushtix.core.feature.venue.repository.VenueRepository;
 import jakarta.persistence.EntityManager;
@@ -29,6 +30,7 @@ public class EventService {
     private final VenueRepository venueRepository;
     private final JpaRepository<User, UUID> userRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final SeatRepository seatRepository;
 
     @Transactional
     public EventDetailResponse createEvent(EventRequest request, UUID organizerId) {
@@ -104,6 +106,16 @@ public class EventService {
 
         if (event.getStatus() != EventStatus.DRAFT) {
             throw new RuntimeException("Only DRAFT events can be published");
+        }
+
+        // Validate that ticket categories have been created
+        if (ticketCategoryRepository.findAllByEventIdOrderByDisplayOrderAsc(id).isEmpty()) {
+            throw new RuntimeException("Cannot publish event: You must create at least one Ticket Category first.");
+        }
+
+        // Validate that a seat map has been generated
+        if (!seatRepository.existsByEventId(id)) {
+            throw new RuntimeException("Cannot publish event: You must generate a Seat Map first.");
         }
 
         event.setStatus(EventStatus.PUBLISHED);

@@ -14,6 +14,7 @@ import java.util.UUID;
 @Repository
 public interface GroupBookingRepository extends JpaRepository<GroupBooking, UUID> {
     List<GroupBooking> findAllByStatusAndExpiresAtBefore(GroupBookingStatus status, OffsetDateTime dateTime);
+    @org.springframework.data.jpa.repository.Query("SELECT gb FROM GroupBooking gb JOIN gb.paymentItems pi WHERE pi.id = :paymentItemId")
     Optional<GroupBooking> findByPaymentItemId(@Param("paymentItemId") UUID paymentItemId);
 
 }
