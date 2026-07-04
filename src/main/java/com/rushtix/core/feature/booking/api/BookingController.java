@@ -61,4 +61,9 @@ public class BookingController {
 //
 //        return ResponseEntity.ok(status);
 //    }
+    @GetMapping("/my-tickets")
+    public ResponseEntity<java.util.List<BookingUserResponse>> getMyTickets() {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(bookingUserService.getUserBookings(userId));
+    }
 }

@@ -28,11 +28,11 @@ public class GroupBookingClaimService {
 
         if(saga.getStatus()!= GroupBookingStatus.PENDING_GROUP_PAYMENT)
         {
-            throw new RuntimeException("Group Booking is not in a claimable state");
+            throw new IllegalStateException("This group booking link is no longer active. It may have already been completed or cancelled.");
         }
         if(saga.getExpiresAt().isBefore(OffsetDateTime.now()))
         {
-            throw new RuntimeException("The 10-minute payment window for this group has already expired");
+            throw new IllegalStateException("This group booking link has expired. The 10-minute payment window has closed. Please ask your friend to create a new group booking.");
         }
         boolean alreadyClaimed=saga.getPaymentItems().stream()
                 .anyMatch(item->request.friendEmail().trim().equalsIgnoreCase(item.getFriendEmail()));

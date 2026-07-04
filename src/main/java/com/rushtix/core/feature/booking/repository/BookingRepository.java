@@ -30,4 +30,10 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     List<Booking> findAllByStatusAndExpiresAtBefore(BookingStatus status, java.time.OffsetDateTime now);
 
+    @Query("SELECT DISTINCT b FROM Booking b " +
+           "JOIN FETCH b.seats s " +
+           "WHERE b.user.id = :userId " +
+           "ORDER BY b.createdAt DESC")
+    List<Booking> findAllUserBookingsWithSeats(@Param("userId") UUID userId);
+
 }

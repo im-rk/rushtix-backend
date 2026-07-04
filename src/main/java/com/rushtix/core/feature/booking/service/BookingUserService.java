@@ -191,4 +191,12 @@ public class BookingUserService {
         }
         return bookingMapper.toUserResponse(booking);
     }
+    @Transactional(readOnly = true)
+    public List<BookingUserResponse> getUserBookings(UUID authenticatedUserId) {
+        List<Booking> bookings = bookingRepository.findAllByUserIdOrderByCreatedAtDesc(authenticatedUserId);
+        return bookings.stream()
+                .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+                .map(bookingMapper::toUserResponse)
+                .toList();
+    }
 }
