@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/group-booking/**").permitAll()
+                        .requestMatchers("/api/v1/grouppay/**").permitAll()
                         .requestMatchers("/api/v1/webhooks/**").permitAll()
                         .requestMatchers("/api/v1/organizer/**").hasRole("ORGANIZER")
                         .anyRequest().authenticated()

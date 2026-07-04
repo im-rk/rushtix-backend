@@ -17,5 +17,8 @@ public interface GroupBookingRepository extends JpaRepository<GroupBooking, UUID
     @org.springframework.data.jpa.repository.Query("SELECT gb FROM GroupBooking gb JOIN gb.paymentItems pi WHERE pi.id = :paymentItemId")
     Optional<GroupBooking> findByPaymentItemId(@Param("paymentItemId") UUID paymentItemId);
 
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT gb FROM GroupBooking gb JOIN FETCH gb.paymentItems pi WHERE (gb.initiatorUserId = :userId OR pi.friendEmail = :email) AND gb.status = :status")
+    List<GroupBooking> findGroupBookingsForUser(@org.springframework.data.repository.query.Param("userId") UUID userId, @org.springframework.data.repository.query.Param("email") String email, @org.springframework.data.repository.query.Param("status") GroupBookingStatus status);
+
 }
 

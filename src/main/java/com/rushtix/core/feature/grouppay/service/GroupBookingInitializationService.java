@@ -53,7 +53,7 @@ public class GroupBookingInitializationService {
                 .totalAmount(booking.getTotalAmount())
                 .perPersonAmount(perPersonAmount)
                 .createdAt(OffsetDateTime.now())
-                .expiresAt(booking.getExpiresAt())
+                .expiresAt(OffsetDateTime.now().plusMinutes(10))
                 .build();
 
         GroupBooking savedSaga=groupBookingRepository.save(masterSaga);
