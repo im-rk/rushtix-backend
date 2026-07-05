@@ -20,6 +20,7 @@ public interface BookingMapper {
     @Mapping(target = "bookingId", source = "id")
     @Mapping(target = "customerName", source = "user.fullName")
     @Mapping(target = "customerEmail", source = "user.email")
+    @Mapping(target = "totalPrice", source = "totalAmount")
     @Mapping(target = "ticketCount", expression = "java(booking.getSeats() != null ? booking.getSeats().size() : 0)")
     BookingOrganizerSummaryResponse toOrganizerSummary(Booking booking);
 

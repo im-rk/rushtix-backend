@@ -4,6 +4,7 @@ import com.rushtix.core.domain.entities.Booking;
 import com.rushtix.core.domain.enums.BookingStatus;
 import com.rushtix.core.feature.booking.dto.BookingOrganizerDetailResponse;
 import com.rushtix.core.feature.booking.dto.BookingOrganizerSummaryResponse;
+import com.rushtix.core.feature.booking.dto.BookingOrganizerProjection;
 import com.rushtix.core.feature.booking.mapper.BookingMapper;
 import com.rushtix.core.feature.booking.repository.BookingRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +25,26 @@ public class BookingOrganizerService {
     public Page<BookingOrganizerSummaryResponse> getEventBookingsDashboard(
             UUID eventId, BookingStatus status, String search, Pageable pageable) {
 
-        Page<Booking> bookingsPage = bookingRepository.findAdminDashboardBookings(eventId, status, search, pageable);
-        return bookingsPage.map(bookingMapper::toOrganizerSummary);
+        String statusStr = status != null ? status.name() : "";
+        String searchStr = search != null ? search : "";
+        Page<BookingOrganizerProjection> bookingsPage = bookingRepository.findCombinedAdminDashboardBookings(eventId, statusStr, searchStr, pageable);
+        return bookingsPage.map(proj -> {
+            BookingStatus mappedStatus;
+            try {
+                mappedStatus = BookingStatus.valueOf(proj.getStatus());
+            } catch (IllegalArgumentException e) {
+                mappedStatus = BookingStatus.CANCELLED;
+            }
+            return new BookingOrganizerSummaryResponse(
+                    UUID.fromString(proj.getBookingId()),
+                    proj.getCustomerName(),
+                    proj.getCustomerEmail(),
+                    proj.getTicketCount(),
+                    proj.getTotalPrice(),
+                    mappedStatus,
+                    proj.getCreatedAt()
+            );
+        });
     }
 
     @Transactional(readOnly = true)
