@@ -1,6 +1,8 @@
 # Ignore local Spring Boot config files
 application.properties
 **/application.properties
+application-prod.properties
+**/application-prod.properties
 
 HELP.md
 target/

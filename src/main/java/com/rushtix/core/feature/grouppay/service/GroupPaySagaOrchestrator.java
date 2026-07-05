@@ -9,6 +9,7 @@ import com.rushtix.core.feature.booking.service.PaymentGatewayService;
 import com.rushtix.core.feature.booking.service.RedisLockService;
 import com.rushtix.core.feature.grouppay.repository.GroupBookingRepository;
 import com.rushtix.core.feature.seat.repository.SeatRepository;
+import com.rushtix.core.feature.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class GroupPaySagaOrchestrator {
     private final SeatRepository seatRepository;
     private final RedisLockService redisLockService;
     private final PaymentGatewayService paymentGatewayService;
+    private final UserRepository userRepository;
 
     @Transactional
     public void processWebhookPaymentSuccess(UUID paymentItemId, String stripePaymentIntentId) {
@@ -61,9 +63,12 @@ public class GroupPaySagaOrchestrator {
         saga.setStatus(GroupBookingStatus.CONFIRMED);
         groupBookingRepository.save(saga);
 
+        com.rushtix.core.domain.entities.User initiator = userRepository.findById(saga.getInitiatorUserId()).orElseThrow();
+
         saga.getPaymentItems().forEach(item -> {
             Seat seat = seatRepository.findById(item.getAssignedSeatId()).orElseThrow();
             seat.setStatus(SeatStatus.BOOKED);
+            seat.setBookedBy(initiator);
             seat.setQrToken("RUSH-GROUP-" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
             seatRepository.save(seat);
         });
