@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -64,5 +65,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "WHERE b.user.id = :userId " +
            "ORDER BY b.createdAt DESC")
     List<Booking> findAllUserBookingsWithSeats(@Param("userId") UUID userId);
+
+    Optional<Booking> findByIdempotencyKey(String idempotencyKey);
 
 }
