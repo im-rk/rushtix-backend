@@ -11,6 +11,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RedisLockService {
     private final StringRedisTemplate redisTemplate;
+    private final com.rushtix.core.feature.seat.repository.SeatRepository seatRepository;
     private static final String LOCK_KEY_PREFIX = "seat:lock:";
 
     public boolean acquireSeatLocks(List<UUID> seatIds,UUID userId,int ttlMinutes)
@@ -61,8 +62,28 @@ public class RedisLockService {
             if (!keysToDelete.isEmpty()) {
                 redisTemplate.delete(keysToDelete);
             }
+
+            try {
+                // We must query the DB to get the eventId for the SSE routing
+                List<com.rushtix.core.domain.entities.Seat> seats = seatRepository.findAllById(seatIds);
+                for (com.rushtix.core.domain.entities.Seat seat : seats) {
+                    String payload = String.format("{\"eventId\":\"%s\", \"seatId\":\"%s\", \"status\":\"AVAILABLE\"}", seat.getEvent().getId(), seat.getId());
+                    broadcastSeatUpdate(payload);
+                }
+            } catch (Exception ex) {
+                System.err.println("Failed to broadcast seat release: " + ex.getMessage());
+            }
+
         } catch (Exception e) {
             System.err.println("Redis fallback activated during release: Unable to connect to Redis. " + e.getMessage());
+        }
+    }
+
+    public void broadcastSeatUpdate(String payload) {
+        try {
+            redisTemplate.convertAndSend("seat-updates", payload);
+        } catch (Exception e) {
+            System.err.println("Failed to publish to Redis: " + e.getMessage());
         }
     }
 }
