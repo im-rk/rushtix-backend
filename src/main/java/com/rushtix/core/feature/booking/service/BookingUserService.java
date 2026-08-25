@@ -64,7 +64,13 @@ public class BookingUserService {
                 seat.setLockedUntil(expiration);
                 seat.setLockedBy(userContext);
             }
-            return seatRepository.saveAll(seats);
+            List<Seat> savedSeats = seatRepository.saveAll(seats);
+
+            for (Seat seat : savedSeats) {
+                String payload = String.format("{\"eventId\":\"%s\", \"seatId\":\"%s\", \"status\":\"LOCKED\"}", seat.getEvent().getId(), seat.getId());
+                redisLockService.broadcastSeatUpdate(payload);
+            }
+            return savedSeats;
         } catch (Exception e) {
             redisLockService.releaseSeatLocks(seatIds, userContext.getId());
             throw e;
